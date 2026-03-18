@@ -1,11 +1,11 @@
 ---
 name: deploy
-description: Deploy MimiClaw firmware to an ESP32-S3 board, including Feishu bot configuration, build, flash, verification, and troubleshooting.
+description: Deploy BareBrain firmware to an ESP32-S3 board, including Feishu bot configuration, build, flash, verification, and troubleshooting.
 ---
 
-# Deploy MimiClaw
+# Deploy BareBrain
 
-End-to-end guide for deploying MimiClaw to an ESP32-S3 dev board.
+End-to-end guide for deploying BareBrain to an ESP32-S3 dev board.
 
 ## Prerequisites
 
@@ -26,33 +26,32 @@ End-to-end guide for deploying MimiClaw to an ESP32-S3 dev board.
 - Optional Brave Search / Tavily keys
 - Optional HTTP proxy host:port
 
-## Step 1: Clone and Set Target
+## Step 1: Enter the Repo and Set Target
 
 ```bash
-git clone https://github.com/memovai/mimiclaw.git
-cd mimiclaw
+cd /path/to/BareBrain
 idf.py set-target esp32s3
 ```
 
 ## Step 2: Configure Secrets
 
 ```bash
-cp main/mimi_secrets.h.example main/mimi_secrets.h
+cp main/brn_secrets.h.example main/brn_secrets.h
 ```
 
-Edit `main/mimi_secrets.h`:
+Edit `main/brn_secrets.h`:
 
 ```c
-#define MIMI_SECRET_WIFI_SSID         "YourWiFiName"
-#define MIMI_SECRET_WIFI_PASS         "YourWiFiPassword"
-#define MIMI_SECRET_FEISHU_APP_ID     "cli_xxxxxxxxxxxxxx"
-#define MIMI_SECRET_FEISHU_APP_SECRET "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-#define MIMI_SECRET_API_KEY           "sk-ant-api03-..."
-#define MIMI_SECRET_MODEL_PROVIDER    "anthropic"
-#define MIMI_SECRET_SEARCH_KEY        ""
-#define MIMI_SECRET_TAVILY_KEY        ""
-#define MIMI_SECRET_PROXY_HOST        ""
-#define MIMI_SECRET_PROXY_PORT        ""
+#define BRN_SECRET_WIFI_SSID         "YourWiFiName"
+#define BRN_SECRET_WIFI_PASS         "YourWiFiPassword"
+#define BRN_SECRET_FEISHU_APP_ID     "cli_xxxxxxxxxxxxxx"
+#define BRN_SECRET_FEISHU_APP_SECRET "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#define BRN_SECRET_API_KEY           "sk-ant-api03-..."
+#define BRN_SECRET_MODEL_PROVIDER    "anthropic"
+#define BRN_SECRET_SEARCH_KEY        ""
+#define BRN_SECRET_TAVILY_KEY        ""
+#define BRN_SECRET_PROXY_HOST        ""
+#define BRN_SECRET_PROXY_PORT        ""
 ```
 
 If you need a proxy for Feishu or the LLM provider, set both proxy fields.
@@ -63,7 +62,7 @@ If you need a proxy for Feishu or the LLM provider, set both proxy fields.
 idf.py fullclean && idf.py build
 ```
 
-Always use `fullclean` after editing `mimi_secrets.h`.
+Always use `fullclean` after editing `brn_secrets.h`.
 
 ## Step 4: Flash
 
@@ -74,18 +73,18 @@ idf.py -p PORT flash monitor
 Look for logs similar to:
 
 ```text
-I (xxx) mimi: MimiClaw - ESP32-S3 AI Agent
+I (xxx) brn: BRN - ESP32-S3 AI Agent
 I (xxx) wifi: WiFi connected: 192.168.x.x
 I (xxx) feishu: Feishu credentials loaded
 I (xxx) feishu: Feishu WebSocket mode enabled
-I (xxx) mimi: All services started!
+I (xxx) brn: All services started!
 ```
 
 ## Step 5: Verify
 
 1. Add or open your Feishu/Lark bot conversation.
 2. Send `Hello`.
-3. Confirm MimiClaw replies.
+3. Confirm BareBrain replies.
 4. Test `What time is it?`.
 5. Test a web search request if search keys are configured.
 
@@ -94,15 +93,15 @@ I (xxx) mimi: All services started!
 Use the serial CLI for runtime changes:
 
 ```text
-mimi> config_show
-mimi> wifi_set NewSSID NewPass
-mimi> set_feishu_creds cli_xxx secret_xxx
-mimi> feishu_send ou_xxx "hello"
-mimi> set_api_key sk-ant-...
-mimi> set_model claude-sonnet-4-5
-mimi> set_proxy 192.168.1.83 7897 http
-mimi> clear_proxy
-mimi> restart
+brn> config_show
+brn> wifi_set NewSSID NewPass
+brn> set_feishu_creds cli_xxx secret_xxx
+brn> feishu_send ou_xxx "hello"
+brn> set_api_key sk-ant-...
+brn> set_model claude-sonnet-4-5
+brn> set_proxy 192.168.1.83 7897 http
+brn> clear_proxy
+brn> restart
 ```
 
 ## Common Issues

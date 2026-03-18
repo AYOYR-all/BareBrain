@@ -1,5 +1,5 @@
 #include "cron/cron_service.h"
-#include "mimi_config.h"
+#include "brn_config.h"
 #include "bus/message_bus.h"
 
 #include <stdio.h>
@@ -14,7 +14,7 @@
 
 static const char *TAG = "cron";
 
-#define MAX_CRON_JOBS  MIMI_CRON_MAX_JOBS
+#define MAX_CRON_JOBS  BRN_CRON_MAX_JOBS
 
 static cron_job_t s_jobs[MAX_CRON_JOBS];
 static int s_job_count = 0;
@@ -30,11 +30,11 @@ static bool cron_sanitize_destination(cron_job_t *job)
     }
 
     if (job->channel[0] == '\0') {
-        strncpy(job->channel, MIMI_CHAN_SYSTEM, sizeof(job->channel) - 1);
+        strncpy(job->channel, BRN_CHAN_SYSTEM, sizeof(job->channel) - 1);
         changed = true;
     }
 
-    if (strcmp(job->channel, MIMI_CHAN_SYSTEM) == 0 && job->chat_id[0] == '\0') {
+    if (strcmp(job->channel, BRN_CHAN_SYSTEM) == 0 && job->chat_id[0] == '\0') {
         strncpy(job->chat_id, "cron", sizeof(job->chat_id) - 1);
         changed = true;
     }
@@ -52,7 +52,7 @@ static void cron_generate_id(char *id_buf)
 
 static esp_err_t cron_load_jobs(void)
 {
-    FILE *f = fopen(MIMI_CRON_FILE, "r");
+    FILE *f = fopen(BRN_CRON_FILE, "r");
     if (!f) {
         ESP_LOGI(TAG, "No cron file found, starting fresh");
         s_job_count = 0;
@@ -119,7 +119,7 @@ static esp_err_t cron_load_jobs(void)
         strncpy(job->id, id, sizeof(job->id) - 1);
         strncpy(job->name, name, sizeof(job->name) - 1);
         strncpy(job->message, message, sizeof(job->message) - 1);
-        strncpy(job->channel, channel ? channel : MIMI_CHAN_SYSTEM,
+        strncpy(job->channel, channel ? channel : BRN_CHAN_SYSTEM,
                 sizeof(job->channel) - 1);
         strncpy(job->chat_id, chat_id ? chat_id : "cron",
                 sizeof(job->chat_id) - 1);
@@ -207,9 +207,9 @@ static esp_err_t cron_save_jobs(void)
         return ESP_ERR_NO_MEM;
     }
 
-    FILE *f = fopen(MIMI_CRON_FILE, "w");
+    FILE *f = fopen(BRN_CRON_FILE, "w");
     if (!f) {
-        ESP_LOGE(TAG, "Failed to open %s for writing", MIMI_CRON_FILE);
+        ESP_LOGE(TAG, "Failed to open %s for writing", BRN_CRON_FILE);
         free(json_str);
         return ESP_FAIL;
     }
@@ -224,7 +224,7 @@ static esp_err_t cron_save_jobs(void)
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Saved %d cron jobs to %s", s_job_count, MIMI_CRON_FILE);
+    ESP_LOGI(TAG, "Saved %d cron jobs to %s", s_job_count, BRN_CRON_FILE);
     return ESP_OK;
 }
 
@@ -246,7 +246,7 @@ static void cron_process_due_jobs(void)
         ESP_LOGI(TAG, "Cron job firing: %s (%s)", job->name, job->id);
 
         /* Push message to inbound queue */
-        mimi_msg_t msg;
+        brn_msg_t msg;
         memset(&msg, 0, sizeof(msg));
         strncpy(msg.channel, job->channel, sizeof(msg.channel) - 1);
         strncpy(msg.chat_id, job->chat_id, sizeof(msg.chat_id) - 1);
@@ -295,7 +295,7 @@ static void cron_task_main(void *arg)
     (void)arg;
 
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(MIMI_CRON_CHECK_INTERVAL_MS));
+        vTaskDelay(pdMS_TO_TICKS(BRN_CRON_CHECK_INTERVAL_MS));
         cron_process_due_jobs();
     }
 }
@@ -360,7 +360,7 @@ esp_err_t cron_service_start(void)
     }
 
     ESP_LOGI(TAG, "Cron service started (%d jobs, check every %ds)",
-             s_job_count, MIMI_CRON_CHECK_INTERVAL_MS / 1000);
+             s_job_count, BRN_CRON_CHECK_INTERVAL_MS / 1000);
     return ESP_OK;
 }
 

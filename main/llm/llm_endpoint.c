@@ -1,5 +1,5 @@
 #include "llm_endpoint.h"
-#include "mimi_config.h"
+#include "brn_config.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -17,11 +17,11 @@ static bool provider_is_openai(const char *provider)
 static const provider_endpoint_defaults_t *provider_defaults(const char *provider)
 {
     static const provider_endpoint_defaults_t openai = {
-        .base_url = MIMI_OPENAI_BASE_URL,
+        .base_url = BRN_OPENAI_BASE_URL,
         .request_path = "/chat/completions",
     };
     static const provider_endpoint_defaults_t anthropic = {
-        .base_url = MIMI_ANTHROPIC_BASE_URL,
+        .base_url = BRN_ANTHROPIC_BASE_URL,
         .request_path = "/messages",
     };
     return provider_is_openai(provider) ? &openai : &anthropic;

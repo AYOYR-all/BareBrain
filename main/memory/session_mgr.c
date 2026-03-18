@@ -1,5 +1,5 @@
 #include "session_mgr.h"
-#include "mimi_config.h"
+#include "brn_config.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -13,12 +13,12 @@ static const char *TAG = "session";
 
 static void session_path(const char *chat_id, char *buf, size_t size)
 {
-    snprintf(buf, size, "%s/tg_%s.jsonl", MIMI_SPIFFS_SESSION_DIR, chat_id);
+    snprintf(buf, size, "%s/tg_%s.jsonl", BRN_SPIFFS_SESSION_DIR, chat_id);
 }
 
 esp_err_t session_mgr_init(void)
 {
-    ESP_LOGI(TAG, "Session manager initialized at %s", MIMI_SPIFFS_SESSION_DIR);
+    ESP_LOGI(TAG, "Session manager initialized at %s", BRN_SPIFFS_SESSION_DIR);
     return ESP_OK;
 }
 
@@ -63,7 +63,7 @@ esp_err_t session_get_history_json(const char *chat_id, char *buf, size_t size, 
     }
 
     /* Read all lines into a ring buffer of cJSON objects */
-    cJSON *messages[MIMI_SESSION_MAX_MSGS];
+    cJSON *messages[BRN_SESSION_MAX_MSGS];
     int count = 0;
     int write_idx = 0;
 
@@ -139,10 +139,10 @@ esp_err_t session_clear(const char *chat_id)
 
 void session_list(void)
 {
-    DIR *dir = opendir(MIMI_SPIFFS_SESSION_DIR);
+    DIR *dir = opendir(BRN_SPIFFS_SESSION_DIR);
     if (!dir) {
         /* SPIFFS is flat, so list all files matching pattern */
-        dir = opendir(MIMI_SPIFFS_BASE);
+        dir = opendir(BRN_SPIFFS_BASE);
         if (!dir) {
             ESP_LOGW(TAG, "Cannot open SPIFFS directory");
             return;

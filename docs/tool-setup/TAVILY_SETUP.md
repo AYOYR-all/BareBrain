@@ -42,13 +42,13 @@ There are two ways to configure the Tavily API key:
 1. Copy the secrets template if you haven't already:
 
 ```bash
-cp main/mimi_secrets.h.example main/mimi_secrets.h
+cp main/brn_secrets.h.example main/brn_secrets.h
 ```
 
-2. Edit `main/mimi_secrets.h` and set your Tavily key:
+2. Edit `main/brn_secrets.h` and set your Tavily key:
 
 ```c
-#define MIMI_SECRET_TAVILY_KEY      "tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#define BRN_SECRET_TAVILY_KEY      "tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 3. Rebuild the firmware:
@@ -68,7 +68,7 @@ idf.py -p PORT flash monitor
 Connect to the UART (COM) port and run:
 
 ```
-mimi> set_tavily_key tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+brn> set_tavily_key tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 This saves the key to NVS flash and takes effect immediately — no rebuild needed. Runtime values override build-time defaults.
@@ -78,7 +78,7 @@ This saves the key to NVS flash and takes effect immediately — no rebuild need
 Check that the key is set:
 
 ```
-mimi> config_show
+brn> config_show
 ```
 
 You should see `tavily_key: tvly-****` (masked) in the output.
@@ -88,8 +88,8 @@ You should see `tavily_key: tvly-****` (masked) in the output.
 When the AI agent needs to search the web, it calls the `web_search` tool. The search provider priority is:
 
 ```
-1. Tavily (if `MIMI_SECRET_TAVILY_KEY` is set)
-2. Brave Search (if `MIMI_SECRET_SEARCH_KEY` is set)
+1. Tavily (if `BRN_SECRET_TAVILY_KEY` is set)
+2. Brave Search (if `BRN_SECRET_SEARCH_KEY` is set)
 3. No search provider configured (the tool returns an explicit error)
 ```
 
@@ -191,7 +191,7 @@ For an ESP32-based agent, you will never hit these limits in practice.
 
 The agent returns this when neither Tavily nor Brave Search keys are set.
 
-**Fix:** Set a Tavily API key via `set_tavily_key` CLI command or in `mimi_secrets.h`.
+**Fix:** Set a Tavily API key via `set_tavily_key` CLI command or in `brn_secrets.h`.
 
 ### Search returns empty results
 

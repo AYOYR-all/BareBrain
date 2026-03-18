@@ -1,5 +1,5 @@
 #include "tool_registry.h"
-#include "mimi_config.h"
+#include "brn_config.h"
 #include "tools/tool_web_search.h"
 #include "tools/tool_get_time.h"
 #include "tools/tool_files.h"
@@ -14,11 +14,11 @@ static const char *TAG = "tools";
 
 #define MAX_TOOLS 16
 
-static mimi_tool_t s_tools[MAX_TOOLS];
+static brn_tool_t s_tools[MAX_TOOLS];
 static int s_tool_count = 0;
 static char *s_tools_json = NULL;  /* cached JSON array string */
 
-static void register_tool(const mimi_tool_t *tool)
+static void register_tool(const brn_tool_t *tool)
 {
     if (s_tool_count >= MAX_TOOLS) {
         ESP_LOGE(TAG, "Tool registry full");
@@ -59,7 +59,7 @@ esp_err_t tool_registry_init(void)
     /* Register web_search */
     tool_web_search_init();
 
-    mimi_tool_t ws = {
+    brn_tool_t ws = {
         .name = "web_search",
         .description = "Search the web for current information via Tavily (preferred) or Brave when configured.",
         .input_schema_json =
@@ -71,7 +71,7 @@ esp_err_t tool_registry_init(void)
     register_tool(&ws);
 
     /* Register get_current_time */
-    mimi_tool_t gt = {
+    brn_tool_t gt = {
         .name = "get_current_time",
         .description = "Get the current date and time. Also sets the system clock. Call this when you need to know what time or date it is.",
         .input_schema_json =
@@ -83,24 +83,24 @@ esp_err_t tool_registry_init(void)
     register_tool(&gt);
 
     /* Register read_file */
-    mimi_tool_t rf = {
+    brn_tool_t rf = {
         .name = "read_file",
-        .description = "Read a file from SPIFFS storage. Path must start with " MIMI_SPIFFS_BASE "/.",
+        .description = "Read a file from SPIFFS storage. Path must start with " BRN_SPIFFS_BASE "/.",
         .input_schema_json =
             "{\"type\":\"object\","
-            "\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Absolute path starting with " MIMI_SPIFFS_BASE "/\"}},"
+            "\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Absolute path starting with " BRN_SPIFFS_BASE "/\"}},"
             "\"required\":[\"path\"]}",
         .execute = tool_read_file_execute,
     };
     register_tool(&rf);
 
     /* Register write_file */
-    mimi_tool_t wf = {
+    brn_tool_t wf = {
         .name = "write_file",
-        .description = "Write or overwrite a file on SPIFFS storage. Path must start with " MIMI_SPIFFS_BASE "/.",
+        .description = "Write or overwrite a file on SPIFFS storage. Path must start with " BRN_SPIFFS_BASE "/.",
         .input_schema_json =
             "{\"type\":\"object\","
-            "\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Absolute path starting with " MIMI_SPIFFS_BASE "/\"},"
+            "\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Absolute path starting with " BRN_SPIFFS_BASE "/\"},"
             "\"content\":{\"type\":\"string\",\"description\":\"File content to write\"}},"
             "\"required\":[\"path\",\"content\"]}",
         .execute = tool_write_file_execute,
@@ -108,12 +108,12 @@ esp_err_t tool_registry_init(void)
     register_tool(&wf);
 
     /* Register edit_file */
-    mimi_tool_t ef = {
+    brn_tool_t ef = {
         .name = "edit_file",
         .description = "Find and replace text in a file on SPIFFS. Replaces first occurrence of old_string with new_string.",
         .input_schema_json =
             "{\"type\":\"object\","
-            "\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Absolute path starting with " MIMI_SPIFFS_BASE "/\"},"
+            "\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Absolute path starting with " BRN_SPIFFS_BASE "/\"},"
             "\"old_string\":{\"type\":\"string\",\"description\":\"Text to find\"},"
             "\"new_string\":{\"type\":\"string\",\"description\":\"Replacement text\"}},"
             "\"required\":[\"path\",\"old_string\",\"new_string\"]}",
@@ -122,19 +122,19 @@ esp_err_t tool_registry_init(void)
     register_tool(&ef);
 
     /* Register list_dir */
-    mimi_tool_t ld = {
+    brn_tool_t ld = {
         .name = "list_dir",
         .description = "List files on SPIFFS storage, optionally filtered by path prefix.",
         .input_schema_json =
             "{\"type\":\"object\","
-            "\"properties\":{\"prefix\":{\"type\":\"string\",\"description\":\"Optional path prefix filter, e.g. " MIMI_SPIFFS_BASE "/memory/\"}},"
+            "\"properties\":{\"prefix\":{\"type\":\"string\",\"description\":\"Optional path prefix filter, e.g. " BRN_SPIFFS_BASE "/memory/\"}},"
             "\"required\":[]}",
         .execute = tool_list_dir_execute,
     };
     register_tool(&ld);
 
     /* Register cron_add */
-    mimi_tool_t ca = {
+    brn_tool_t ca = {
         .name = "cron_add",
         .description = "Schedule a recurring or one-shot task. The message will trigger an agent turn when the job fires.",
         .input_schema_json =
@@ -154,7 +154,7 @@ esp_err_t tool_registry_init(void)
     register_tool(&ca);
 
     /* Register cron_list */
-    mimi_tool_t cl = {
+    brn_tool_t cl = {
         .name = "cron_list",
         .description = "List all scheduled cron jobs with their status, schedule, and IDs.",
         .input_schema_json =
@@ -166,7 +166,7 @@ esp_err_t tool_registry_init(void)
     register_tool(&cl);
 
     /* Register cron_remove */
-    mimi_tool_t cr = {
+    brn_tool_t cr = {
         .name = "cron_remove",
         .description = "Remove a scheduled cron job by its ID.",
         .input_schema_json =
@@ -180,7 +180,7 @@ esp_err_t tool_registry_init(void)
     /* Register GPIO tools */
     tool_gpio_init();
 
-    mimi_tool_t gw = {
+    brn_tool_t gw = {
         .name = "gpio_write",
         .description = "Set a GPIO pin HIGH or LOW. Controls LEDs, relays, and other digital outputs.",
         .input_schema_json =
@@ -192,7 +192,7 @@ esp_err_t tool_registry_init(void)
     };
     register_tool(&gw);
 
-    mimi_tool_t gr = {
+    brn_tool_t gr = {
         .name = "gpio_read",
         .description = "Read a GPIO pin state. Returns HIGH or LOW. Use for checking switches, sensors, and digital inputs.",
         .input_schema_json =
@@ -203,7 +203,7 @@ esp_err_t tool_registry_init(void)
     };
     register_tool(&gr);
 
-    mimi_tool_t ga = {
+    brn_tool_t ga = {
         .name = "gpio_read_all",
         .description = "Read all allowed GPIO pin states in a single call. Returns each pin's HIGH/LOW state.",
         .input_schema_json =

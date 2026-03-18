@@ -1,4 +1,4 @@
-# MimiClaw Architecture
+# BareBrain Architecture
 
 > ESP32-S3 AI Agent firmware running in C/FreeRTOS on bare metal.
 
@@ -10,7 +10,7 @@ Feishu / Lark User
         │  Feishu Open Platform WebSocket
         ▼
 ┌──────────────────────────────────────────────────┐
-│               ESP32-S3 (MimiClaw)                │
+│               ESP32-S3 (BareBrain)                │
 │                                                  │
 │   ┌─────────────┐       ┌──────────────────┐     │
 │   │   Feishu    │──────▶│   Inbound Queue  │     │
@@ -47,7 +47,7 @@ Feishu / Lark User
 ## Data Flow
 
 1. User sends a message in Feishu/Lark or through the local WebSocket gateway.
-2. The channel adapter wraps it as `mimi_msg_t` and pushes it into the inbound queue.
+2. The channel adapter wraps it as `brn_msg_t` and pushes it into the inbound queue.
 3. The agent loop loads session history, builds the system prompt, calls the LLM, and executes tools if needed.
 4. Final text is saved to the session history and pushed to the outbound queue.
 5. Outbound dispatch routes the response to Feishu, WebSocket, or the system log channel.
@@ -56,7 +56,7 @@ Feishu / Lark User
 
 ```
 main/
-├── mimi.c                    app_main orchestration
+├── brn.c                    app_main orchestration
 ├── bus/                      inbound/outbound queues
 ├── channels/feishu/          Feishu bot init, WS receive, REST send
 ├── agent/                    context building + ReAct loop
@@ -72,7 +72,7 @@ main/
 
 ## Key Configuration
 
-- Build-time defaults live in `main/mimi_secrets.h`.
+- Build-time defaults live in `main/brn_secrets.h`.
 - Runtime overrides are stored in NVS and can be changed from:
   - serial CLI (`set_feishu_creds`, `set_api_key`, `set_model`, `set_proxy`, ...)
   - onboarding/admin portal at `http://192.168.4.1`

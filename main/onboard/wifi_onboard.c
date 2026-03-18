@@ -1,6 +1,6 @@
 #include "wifi_onboard.h"
 #include "onboard_html.h"
-#include "mimi_config.h"
+#include "brn_config.h"
 #include "wifi/wifi_manager.h"
 
 #include <stdint.h>
@@ -175,7 +175,7 @@ static esp_err_t http_get_scan(httpd_req_t *req)
 
     uint16_t ap_count = 0;
     esp_wifi_scan_get_ap_num(&ap_count);
-    if (ap_count > MIMI_ONBOARD_MAX_SCAN) ap_count = MIMI_ONBOARD_MAX_SCAN;
+    if (ap_count > BRN_ONBOARD_MAX_SCAN) ap_count = BRN_ONBOARD_MAX_SCAN;
 
     wifi_ap_record_t *ap_list = calloc(ap_count, sizeof(wifi_ap_record_t));
     if (!ap_list) {
@@ -215,22 +215,22 @@ static esp_err_t http_get_config(httpd_req_t *req)
         return ESP_FAIL;
     }
 
-    json_add_effective_config(root, "ssid", MIMI_NVS_WIFI, MIMI_NVS_KEY_SSID, MIMI_SECRET_WIFI_SSID);
-    json_add_effective_config(root, "password", MIMI_NVS_WIFI, MIMI_NVS_KEY_PASS, MIMI_SECRET_WIFI_PASS);
-    json_add_effective_config(root, "api_key", MIMI_NVS_LLM, MIMI_NVS_KEY_API_KEY, MIMI_SECRET_API_KEY);
-    json_add_effective_config(root, "model", MIMI_NVS_LLM, MIMI_NVS_KEY_MODEL, MIMI_SECRET_MODEL);
-    json_add_effective_config(root, "provider", MIMI_NVS_LLM, MIMI_NVS_KEY_PROVIDER, MIMI_SECRET_MODEL_PROVIDER);
-    json_add_effective_config(root, "base_url", MIMI_NVS_LLM, MIMI_NVS_KEY_BASE_URL, MIMI_SECRET_BASE_URL);
-    json_add_effective_config(root, "feishu_app_id", MIMI_NVS_FEISHU, MIMI_NVS_KEY_FEISHU_APP_ID, MIMI_SECRET_FEISHU_APP_ID);
-    json_add_effective_config(root, "feishu_app_secret", MIMI_NVS_FEISHU, MIMI_NVS_KEY_FEISHU_APP_SECRET, MIMI_SECRET_FEISHU_APP_SECRET);
-    json_add_effective_config(root, "relay_url", MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_URL, MIMI_SECRET_RELAY_URL);
-    json_add_effective_config(root, "relay_device_id", MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_DEVICE_ID, MIMI_SECRET_RELAY_DEVICE_ID);
-    json_add_effective_config(root, "relay_device_secret", MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_DEVICE_SECRET, MIMI_SECRET_RELAY_DEVICE_SECRET);
-    json_add_effective_config(root, "proxy_host", MIMI_NVS_PROXY, MIMI_NVS_KEY_PROXY_HOST, MIMI_SECRET_PROXY_HOST);
-    json_add_effective_config_u16(root, "proxy_port", MIMI_NVS_PROXY, MIMI_NVS_KEY_PROXY_PORT, MIMI_SECRET_PROXY_PORT);
-    json_add_effective_config(root, "proxy_type", MIMI_NVS_PROXY, MIMI_NVS_KEY_PROXY_TYPE, MIMI_SECRET_PROXY_TYPE);
-    json_add_effective_config(root, "search_key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_API_KEY, MIMI_SECRET_SEARCH_KEY);
-    json_add_effective_config(root, "tavily_key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_TAVILY_KEY, MIMI_SECRET_TAVILY_KEY);
+    json_add_effective_config(root, "ssid", BRN_NVS_WIFI, BRN_NVS_KEY_SSID, BRN_SECRET_WIFI_SSID);
+    json_add_effective_config(root, "password", BRN_NVS_WIFI, BRN_NVS_KEY_PASS, BRN_SECRET_WIFI_PASS);
+    json_add_effective_config(root, "api_key", BRN_NVS_LLM, BRN_NVS_KEY_API_KEY, BRN_SECRET_API_KEY);
+    json_add_effective_config(root, "model", BRN_NVS_LLM, BRN_NVS_KEY_MODEL, BRN_SECRET_MODEL);
+    json_add_effective_config(root, "provider", BRN_NVS_LLM, BRN_NVS_KEY_PROVIDER, BRN_SECRET_MODEL_PROVIDER);
+    json_add_effective_config(root, "base_url", BRN_NVS_LLM, BRN_NVS_KEY_BASE_URL, BRN_SECRET_BASE_URL);
+    json_add_effective_config(root, "feishu_app_id", BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_ID, BRN_SECRET_FEISHU_APP_ID);
+    json_add_effective_config(root, "feishu_app_secret", BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_SECRET, BRN_SECRET_FEISHU_APP_SECRET);
+    json_add_effective_config(root, "relay_url", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_URL, BRN_SECRET_RELAY_URL);
+    json_add_effective_config(root, "relay_device_id", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_ID, BRN_SECRET_RELAY_DEVICE_ID);
+    json_add_effective_config(root, "relay_device_secret", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_SECRET, BRN_SECRET_RELAY_DEVICE_SECRET);
+    json_add_effective_config(root, "proxy_host", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_HOST, BRN_SECRET_PROXY_HOST);
+    json_add_effective_config_u16(root, "proxy_port", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_PORT, BRN_SECRET_PROXY_PORT);
+    json_add_effective_config(root, "proxy_type", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_TYPE, BRN_SECRET_PROXY_TYPE);
+    json_add_effective_config(root, "search_key", BRN_NVS_SEARCH, BRN_NVS_KEY_API_KEY, BRN_SECRET_SEARCH_KEY);
+    json_add_effective_config(root, "tavily_key", BRN_NVS_SEARCH, BRN_NVS_KEY_TAVILY_KEY, BRN_SECRET_TAVILY_KEY);
 
     char *json = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
@@ -339,32 +339,32 @@ static esp_err_t http_post_save(httpd_req_t *req)
     }
 
     /* WiFi (required) */
-    nvs_sync_field(root, "ssid",     MIMI_NVS_WIFI,   MIMI_NVS_KEY_SSID);
-    nvs_sync_field(root, "password", MIMI_NVS_WIFI,   MIMI_NVS_KEY_PASS);
+    nvs_sync_field(root, "ssid",     BRN_NVS_WIFI,   BRN_NVS_KEY_SSID);
+    nvs_sync_field(root, "password", BRN_NVS_WIFI,   BRN_NVS_KEY_PASS);
 
     /* LLM */
-    nvs_sync_field(root, "api_key",  MIMI_NVS_LLM,    MIMI_NVS_KEY_API_KEY);
-    nvs_sync_field(root, "model",    MIMI_NVS_LLM,    MIMI_NVS_KEY_MODEL);
-    nvs_sync_field(root, "provider", MIMI_NVS_LLM,    MIMI_NVS_KEY_PROVIDER);
-    nvs_sync_field(root, "base_url", MIMI_NVS_LLM,    MIMI_NVS_KEY_BASE_URL);
+    nvs_sync_field(root, "api_key",  BRN_NVS_LLM,    BRN_NVS_KEY_API_KEY);
+    nvs_sync_field(root, "model",    BRN_NVS_LLM,    BRN_NVS_KEY_MODEL);
+    nvs_sync_field(root, "provider", BRN_NVS_LLM,    BRN_NVS_KEY_PROVIDER);
+    nvs_sync_field(root, "base_url", BRN_NVS_LLM,    BRN_NVS_KEY_BASE_URL);
 
     /* Feishu */
-    nvs_sync_field(root, "feishu_app_id",     MIMI_NVS_FEISHU, MIMI_NVS_KEY_FEISHU_APP_ID);
-    nvs_sync_field(root, "feishu_app_secret", MIMI_NVS_FEISHU, MIMI_NVS_KEY_FEISHU_APP_SECRET);
+    nvs_sync_field(root, "feishu_app_id",     BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_ID);
+    nvs_sync_field(root, "feishu_app_secret", BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_SECRET);
 
     /* Relay */
-    nvs_sync_field(root, "relay_url", MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_URL);
-    nvs_sync_field(root, "relay_device_id", MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_DEVICE_ID);
-    nvs_sync_field(root, "relay_device_secret", MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_DEVICE_SECRET);
+    nvs_sync_field(root, "relay_url", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_URL);
+    nvs_sync_field(root, "relay_device_id", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_ID);
+    nvs_sync_field(root, "relay_device_secret", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_SECRET);
 
     /* Proxy */
-    nvs_sync_field(root, "proxy_host", MIMI_NVS_PROXY, MIMI_NVS_KEY_PROXY_HOST);
-    nvs_sync_u16_field(root, "proxy_port", MIMI_NVS_PROXY, MIMI_NVS_KEY_PROXY_PORT);
-    nvs_sync_field(root, "proxy_type", MIMI_NVS_PROXY, MIMI_NVS_KEY_PROXY_TYPE);
+    nvs_sync_field(root, "proxy_host", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_HOST);
+    nvs_sync_u16_field(root, "proxy_port", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_PORT);
+    nvs_sync_field(root, "proxy_type", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_TYPE);
 
     /* Search */
-    nvs_sync_field(root, "search_key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_API_KEY);
-    nvs_sync_field(root, "tavily_key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_TAVILY_KEY);
+    nvs_sync_field(root, "search_key", BRN_NVS_SEARCH, BRN_NVS_KEY_API_KEY);
+    nvs_sync_field(root, "tavily_key", BRN_NVS_SEARCH, BRN_NVS_KEY_TAVILY_KEY);
 
     cJSON_Delete(root);
 
@@ -386,7 +386,7 @@ static esp_err_t start_softap(bool keep_sta)
     uint8_t mac[6];
     esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
     char ssid[32];
-    snprintf(ssid, sizeof(ssid), "%s%02X%02X", MIMI_ONBOARD_AP_PREFIX, mac[4], mac[5]);
+    snprintf(ssid, sizeof(ssid), "%s%02X%02X", BRN_ONBOARD_AP_PREFIX, mac[4], mac[5]);
 
     /* Create AP netif if not already present */
     static esp_netif_t *ap_netif = NULL;
@@ -428,7 +428,7 @@ static httpd_handle_t start_http_server(bool captive)
     }
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port = MIMI_ONBOARD_HTTP_PORT;
+    config.server_port = BRN_ONBOARD_HTTP_PORT;
     config.max_uri_handlers = captive ? 16 : 8;
     config.stack_size = 8192;
     config.lru_purge_enable = true;
@@ -482,7 +482,7 @@ static httpd_handle_t start_http_server(bool captive)
     }
 
     s_captive_mode = captive;
-    ESP_LOGI(TAG, "HTTP server started on port %d", MIMI_ONBOARD_HTTP_PORT);
+    ESP_LOGI(TAG, "HTTP server started on port %d", BRN_ONBOARD_HTTP_PORT);
     return s_server;
 }
 
@@ -508,14 +508,14 @@ esp_err_t wifi_onboard_start(wifi_onboard_mode_t mode)
     if (captive) {
         /* Start DNS hijack only for true captive portal mode. */
         xTaskCreate(dns_hijack_task, "dns_hijack",
-                    MIMI_ONBOARD_DNS_STACK, NULL, 5, NULL);
+                    BRN_ONBOARD_DNS_STACK, NULL, 5, NULL);
     }
 
     /* Start HTTP server */
     httpd_handle_t server = start_http_server(captive);
     if (!server) return ESP_FAIL;
 
-    ESP_LOGI(TAG, "Connect to MimiClaw-XXXX WiFi, then open http://192.168.4.1");
+    ESP_LOGI(TAG, "Connect to BRN-XXXX WiFi, then open http://192.168.4.1");
 
     if (!captive) {
         ESP_LOGI(TAG, "Local admin portal stays available while STA is connected");

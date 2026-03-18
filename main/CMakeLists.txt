@@ -1,6 +1,6 @@
 idf_component_register(
     SRCS
-        "mimi.c"
+        "brn.c"
         "bus/message_bus.c"
         "wifi/wifi_manager.c"
         "channels/feishu/feishu_bot.c"

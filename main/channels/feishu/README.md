@@ -1,6 +1,6 @@
 # Feishu/Lark Bot Integration
 
-This directory contains the Feishu bot integration for MimiClaw.
+This directory contains the Feishu bot integration for BareBrain.
 
 ## Features
 
@@ -18,13 +18,13 @@ This directory contains the Feishu bot integration for MimiClaw.
 
 1. Copy the secrets template:
 ```bash
-cp main/mimi_secrets.h.example main/mimi_secrets.h
+cp main/brn_secrets.h.example main/brn_secrets.h
 ```
 
-2. Edit `main/mimi_secrets.h`:
+2. Edit `main/brn_secrets.h`:
 ```c
-#define MIMI_SECRET_FEISHU_APP_ID     "cli_xxxxxxxxxxxxxx"
-#define MIMI_SECRET_FEISHU_APP_SECRET "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#define BRN_SECRET_FEISHU_APP_ID     "cli_xxxxxxxxxxxxxx"
+#define BRN_SECRET_FEISHU_APP_SECRET "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 3. Rebuild:
@@ -35,7 +35,7 @@ idf.py fullclean && idf.py build
 ### Option 2: Runtime Configuration (CLI)
 
 ```
-mimi> set_feishu_creds cli_xxxxxxxxxxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+brn> set_feishu_creds cli_xxxxxxxxxxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 ## Feishu App Setup

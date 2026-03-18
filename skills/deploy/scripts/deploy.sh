@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# MimiClaw Quick Deploy Script
+# BareBrain Quick Deploy Script
 # Usage: ./skills/deploy/scripts/deploy.sh [port]
 #
 # This script handles the full build-flash cycle:
 # 1. Checks prerequisites
-# 2. Ensures mimi_secrets.h exists
+# 2. Ensures brn_secrets.h exists
 # 3. Builds the firmware
 # 4. Auto-detects or uses specified serial port
 # 5. Flashes and opens monitor
@@ -25,7 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 cd "$PROJECT_ROOT"
 
-info "MimiClaw Deploy — project: $PROJECT_ROOT"
+info "BareBrain Deploy — project: $PROJECT_ROOT"
 
 # Check ESP-IDF
 if ! command -v idf.py &>/dev/null; then
@@ -36,16 +36,16 @@ IDF_VER=$(idf.py --version 2>&1 | head -1)
 info "ESP-IDF: $IDF_VER"
 
 # Check secrets
-if [ ! -f main/mimi_secrets.h ]; then
-    warn "main/mimi_secrets.h not found — creating from example"
-    cp main/mimi_secrets.h.example main/mimi_secrets.h
-    warn "Edit main/mimi_secrets.h with your credentials, then re-run this script"
+if [ ! -f main/brn_secrets.h ]; then
+    warn "main/brn_secrets.h not found — creating from example"
+    cp main/brn_secrets.h.example main/brn_secrets.h
+    warn "Edit main/brn_secrets.h with your credentials, then re-run this script"
     exit 1
 fi
 
 # Check if secrets are configured (WiFi SSID not empty)
-if grep -q 'MIMI_SECRET_WIFI_SSID.*""' main/mimi_secrets.h; then
-    error "WiFi SSID is empty in main/mimi_secrets.h — edit it first"
+if grep -q 'BRN_SECRET_WIFI_SSID.*""' main/brn_secrets.h; then
+    error "WiFi SSID is empty in main/brn_secrets.h — edit it first"
 fi
 
 # Build
@@ -53,12 +53,12 @@ info "Building firmware (fullclean)..."
 idf.py fullclean >/dev/null 2>&1 || true
 idf.py build 2>&1 | tail -5
 
-if [ ! -f build/mimiclaw.bin ]; then
+if [ ! -f build/barebrain.bin ]; then
     error "Build failed — check errors above"
 fi
 
-BIN_SIZE=$(stat -f%z build/mimiclaw.bin 2>/dev/null || stat -c%s build/mimiclaw.bin 2>/dev/null)
-info "Firmware built: build/mimiclaw.bin ($(( BIN_SIZE / 1024 )) KB)"
+BIN_SIZE=$(stat -f%z build/barebrain.bin 2>/dev/null || stat -c%s build/barebrain.bin 2>/dev/null)
+info "Firmware built: build/barebrain.bin ($(( BIN_SIZE / 1024 )) KB)"
 
 # Detect serial port
 PORT="${1:-}"

@@ -47,7 +47,7 @@ esp_err_t tool_cron_add_execute(const char *input_json, char *output, size_t out
     if (chat_id) strncpy(job.chat_id, chat_id, sizeof(job.chat_id) - 1);
 
     if (job.channel[0] != '\0' &&
-        strcmp(job.channel, MIMI_CHAN_SYSTEM) != 0 &&
+        strcmp(job.channel, BRN_CHAN_SYSTEM) != 0 &&
         (job.chat_id[0] == '\0' || strcmp(job.chat_id, "cron") == 0)) {
         snprintf(output, output_size,
                  "Error: cron_add with a non-system channel requires a valid chat_id");

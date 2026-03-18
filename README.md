@@ -4,7 +4,7 @@
   <strong><a href="README.md">English</a> | <a href="README_CN.md">中文</a> | <a href="README_JA.md">日本語</a></strong>
 </p>
 
-> BareBrain is a derivative work based on [memovai/mimiclaw](https://github.com/memovai/mimiclaw) and distributed under the MIT License. Firmware internals, CLI prompts, and some device-facing strings still keep the historical `MimiClaw` naming, so literal names in commands, logs, and AP labels remain unchanged below when they reflect actual runtime behavior.
+> BareBrain is a derivative work based on [memovai/mimiclaw](https://github.com/memovai/mimiclaw) and distributed under the MIT License.
 
 **Pocket AI assistant firmware for ESP32-S3. No Linux. No Node.js. Just pure C.**
 
@@ -106,32 +106,32 @@ xcode-select --install
 
 ### Configure
 
-MimiClaw uses a **two-layer config** system: build-time defaults in `mimi_secrets.h`, with runtime overrides via the serial CLI. CLI values are stored in NVS flash and take priority over build-time values.
+BareBrain uses a **two-layer config** system: build-time defaults in `brn_secrets.h`, with runtime overrides via the serial CLI. CLI values are stored in NVS flash and take priority over build-time values.
 
 ```bash
-cp main/mimi_secrets.h.example main/mimi_secrets.h
+cp main/brn_secrets.h.example main/brn_secrets.h
 ```
 
-Edit `main/mimi_secrets.h`:
+Edit `main/brn_secrets.h`:
 
 ```c
-#define MIMI_SECRET_WIFI_SSID       "YourWiFiName"
-#define MIMI_SECRET_WIFI_PASS       "YourWiFiPassword"
-#define MIMI_SECRET_FEISHU_APP_ID   "cli_xxxxxxxxxxxxxx"
-#define MIMI_SECRET_FEISHU_APP_SECRET "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-#define MIMI_SECRET_API_KEY         "sk-ant-api03-xxxxx"
-#define MIMI_SECRET_MODEL_PROVIDER  "anthropic"     // "anthropic" or "openai"
-#define MIMI_SECRET_BASE_URL        ""              // optional: https://openrouter.ai/api/v1
-#define MIMI_SECRET_SEARCH_KEY      ""              // optional: Brave Search API key
-#define MIMI_SECRET_TAVILY_KEY      ""              // optional: Tavily API key (preferred)
-#define MIMI_SECRET_PROXY_HOST      ""              // optional: e.g. "10.0.0.1"
-#define MIMI_SECRET_PROXY_PORT      ""              // optional: e.g. "7897"
+#define BRN_SECRET_WIFI_SSID       "YourWiFiName"
+#define BRN_SECRET_WIFI_PASS       "YourWiFiPassword"
+#define BRN_SECRET_FEISHU_APP_ID   "cli_xxxxxxxxxxxxxx"
+#define BRN_SECRET_FEISHU_APP_SECRET "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#define BRN_SECRET_API_KEY         "sk-ant-api03-xxxxx"
+#define BRN_SECRET_MODEL_PROVIDER  "anthropic"     // "anthropic" or "openai"
+#define BRN_SECRET_BASE_URL        ""              // optional: https://openrouter.ai/api/v1
+#define BRN_SECRET_SEARCH_KEY      ""              // optional: Brave Search API key
+#define BRN_SECRET_TAVILY_KEY      ""              // optional: Tavily API key (preferred)
+#define BRN_SECRET_PROXY_HOST      ""              // optional: e.g. "10.0.0.1"
+#define BRN_SECRET_PROXY_PORT      ""              // optional: e.g. "7897"
 ```
 
 Then build and flash:
 
 ```bash
-# Clean build (required after any mimi_secrets.h change)
+# Clean build (required after any brn_secrets.h change)
 idf.py fullclean && idf.py build
 
 # Find your serial port
@@ -159,37 +159,37 @@ Connect via serial to configure or debug. **Config commands** let you change set
 **Runtime config** (saved to NVS, overrides build-time defaults):
 
 ```
-mimi> wifi_set MySSID MyPassword   # change WiFi network
-mimi> set_feishu_creds cli_xxx secret_xxx   # change Feishu/Lark app credentials
-mimi> feishu_send ou_xxx "hello"            # send a Feishu test message
-mimi> set_relay wss://relay.example.com/ws demo-board board-secret
-mimi> clear_relay                           # remove relay config
-mimi> set_api_key sk-ant-api03-... # change API key (Anthropic or OpenAI)
-mimi> set_model_provider openai    # switch provider (anthropic|openai)
-mimi> set_model gpt-4o             # change LLM model
-mimi> set_base_url https://openrouter.ai/api/v1  # optional: OpenAI-compatible API root
-mimi> set_proxy 127.0.0.1 7897  # set HTTP proxy
-mimi> clear_proxy                  # remove proxy
-mimi> set_search_key BSA...        # set Brave Search API key
-mimi> set_tavily_key tvly-...      # set Tavily API key (preferred)
-mimi> config_show                  # show all config (masked)
-mimi> config_reset                 # clear NVS, revert to build-time defaults
+brn> wifi_set MySSID MyPassword   # change WiFi network
+brn> set_feishu_creds cli_xxx secret_xxx   # change Feishu/Lark app credentials
+brn> feishu_send ou_xxx "hello"            # send a Feishu test message
+brn> set_relay wss://relay.example.com/ws demo-board board-secret
+brn> clear_relay                           # remove relay config
+brn> set_api_key sk-ant-api03-... # change API key (Anthropic or OpenAI)
+brn> set_model_provider openai    # switch provider (anthropic|openai)
+brn> set_model gpt-4o             # change LLM model
+brn> set_base_url https://openrouter.ai/api/v1  # optional: OpenAI-compatible API root
+brn> set_proxy 127.0.0.1 7897  # set HTTP proxy
+brn> clear_proxy                  # remove proxy
+brn> set_search_key BSA...        # set Brave Search API key
+brn> set_tavily_key tvly-...      # set Tavily API key (preferred)
+brn> config_show                  # show all config (masked)
+brn> config_reset                 # clear NVS, revert to build-time defaults
 ```
 
-Leave `MIMI_SECRET_BASE_URL` empty to use the official provider endpoint. To use an OpenAI-compatible gateway, keep `provider=openai` and set the API root such as `https://openrouter.ai/api/v1`.
+Leave `BRN_SECRET_BASE_URL` empty to use the official provider endpoint. To use an OpenAI-compatible gateway, keep `provider=openai` and set the API root such as `https://openrouter.ai/api/v1`.
 
 **Debug & maintenance:**
 
 ```
-mimi> wifi_status              # am I connected?
-mimi> memory_read              # see what the bot remembers
-mimi> memory_write "content"   # write to MEMORY.md
-mimi> heap_info                # how much RAM is free?
-mimi> session_list             # list all chat sessions
-mimi> session_clear 12345      # wipe a conversation
-mimi> heartbeat_trigger           # manually trigger a heartbeat check
-mimi> cron_start                  # start cron scheduler now
-mimi> restart                     # reboot
+brn> wifi_status              # am I connected?
+brn> memory_read              # see what the bot remembers
+brn> memory_write "content"   # write to MEMORY.md
+brn> heap_info                # how much RAM is free?
+brn> session_list             # list all chat sessions
+brn> session_clear 12345      # wipe a conversation
+brn> heartbeat_trigger           # manually trigger a heartbeat check
+brn> cron_start                  # start cron scheduler now
+brn> restart                     # reboot
 ```
 
 ### USB (JTAG) vs UART: Which Port for What
@@ -235,7 +235,7 @@ idf.py -p /dev/cu.usbserial-110 monitor
 
 ## Memory
 
-MimiClaw stores everything as plain text files you can read and edit:
+BareBrain stores everything as plain text files you can read and edit:
 
 | File | What it is |
 |------|------------|
@@ -249,7 +249,7 @@ MimiClaw stores everything as plain text files you can read and edit:
 
 ## Tools
 
-MimiClaw supports tool calling for both Anthropic and OpenAI — the LLM can call tools during a conversation and loop until the task is done (ReAct pattern).
+BareBrain supports tool calling for both Anthropic and OpenAI — the LLM can call tools during a conversation and loop until the task is done (ReAct pattern).
 
 | Tool | Description |
 |------|-------------|
@@ -259,11 +259,11 @@ MimiClaw supports tool calling for both Anthropic and OpenAI — the LLM can cal
 | `cron_list` | List all scheduled cron jobs |
 | `cron_remove` | Remove a cron job by ID |
 
-To enable web search, set a [Tavily API key](https://app.tavily.com/home) via `MIMI_SECRET_TAVILY_KEY` (preferred), or a [Brave Search API key](https://brave.com/search/api/) via `MIMI_SECRET_SEARCH_KEY` in `mimi_secrets.h`.
+To enable web search, set a [Tavily API key](https://app.tavily.com/home) via `BRN_SECRET_TAVILY_KEY` (preferred), or a [Brave Search API key](https://brave.com/search/api/) via `BRN_SECRET_SEARCH_KEY` in `brn_secrets.h`.
 
 ## Cron Tasks
 
-MimiClaw has a built-in cron scheduler that lets the AI schedule its own tasks. The LLM can create recurring jobs ("every N seconds") or one-shot jobs ("at unix timestamp") via the `cron_add` tool. When a job fires, its message is injected into the agent loop — so the AI wakes up, processes the task, and responds.
+BareBrain has a built-in cron scheduler that lets the AI schedule its own tasks. The LLM can create recurring jobs ("every N seconds") or one-shot jobs ("at unix timestamp") via the `cron_add` tool. When a job fires, its message is injected into the agent loop — so the AI wakes up, processes the task, and responds.
 
 Jobs are persisted to SPIFFS (`cron.json`) and survive reboots. Example use cases: daily summaries, periodic reminders, scheduled check-ins.
 
@@ -271,7 +271,7 @@ Jobs are persisted to SPIFFS (`cron.json`) and survive reboots. Example use case
 
 The heartbeat service periodically reads `HEARTBEAT.md` from SPIFFS and checks for actionable tasks. If uncompleted items are found (anything that isn't an empty line, a header, or a checked `- [x]` box), it sends a prompt to the agent loop so the AI can act on them autonomously.
 
-This turns MimiClaw into a proactive assistant — write tasks to `HEARTBEAT.md` and the bot will pick them up on the next heartbeat cycle (default: every 30 minutes).
+This turns BareBrain into a proactive assistant — write tasks to `HEARTBEAT.md` and the bot will pick them up on the next heartbeat cycle (default: every 30 minutes).
 
 ## Also Included
 
@@ -291,7 +291,7 @@ Technical details live in the `docs/` folder:
 
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — system design, module map, task layout, memory budget, protocols, flash partitions
 - **[docs/TODO.md](docs/TODO.md)** — feature gap tracker and roadmap
-- **[docs/WIFI_ONBOARDING_AP.md](docs/WIFI_ONBOARDING_AP.md)** — how the local `MimiClaw-XXXX` onboarding/admin AP flow works
+- **[docs/WIFI_ONBOARDING_AP.md](docs/WIFI_ONBOARDING_AP.md)** — how the local `BareBrain-XXXX` onboarding/admin AP flow works
 - **[docs/tool-setup/](docs/tool-setup/README.md)** — configuration guides for external service integrations (Tavily, etc.)
 
 ## Contributing

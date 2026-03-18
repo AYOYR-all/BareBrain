@@ -1,6 +1,6 @@
 #include "tools/tool_gpio.h"
 #include "tools/gpio_policy.h"
-#include "mimi_config.h"
+#include "brn_config.h"
 
 #include "driver/gpio.h"
 #include "esp_log.h"
@@ -14,7 +14,7 @@ static const char *TAG = "tool_gpio";
 esp_err_t tool_gpio_init(void)
 {
     ESP_LOGI(TAG, "GPIO tool initialized (pin range %d-%d)",
-             MIMI_GPIO_MIN_PIN, MIMI_GPIO_MAX_PIN);
+             BRN_GPIO_MIN_PIN, BRN_GPIO_MAX_PIN);
     return ESP_OK;
 }
 
@@ -48,11 +48,11 @@ esp_err_t tool_gpio_write_execute(const char *input_json, char *output, size_t o
             cJSON_Delete(root);
             return ESP_ERR_INVALID_ARG;
         }
-        if (MIMI_GPIO_ALLOWED_CSV[0] != '\0') {
+        if (BRN_GPIO_ALLOWED_CSV[0] != '\0') {
             snprintf(output, output_size, "Error: pin %d is not in allowed list", pin);
         } else {
             snprintf(output, output_size, "Error: pin must be %d-%d",
-                     MIMI_GPIO_MIN_PIN, MIMI_GPIO_MAX_PIN);
+                     BRN_GPIO_MIN_PIN, BRN_GPIO_MAX_PIN);
         }
         cJSON_Delete(root);
         return ESP_ERR_INVALID_ARG;
@@ -94,11 +94,11 @@ esp_err_t tool_gpio_read_execute(const char *input_json, char *output, size_t ou
             cJSON_Delete(root);
             return ESP_ERR_INVALID_ARG;
         }
-        if (MIMI_GPIO_ALLOWED_CSV[0] != '\0') {
+        if (BRN_GPIO_ALLOWED_CSV[0] != '\0') {
             snprintf(output, output_size, "Error: pin %d is not in allowed list", pin);
         } else {
             snprintf(output, output_size, "Error: pin must be %d-%d",
-                     MIMI_GPIO_MIN_PIN, MIMI_GPIO_MAX_PIN);
+                     BRN_GPIO_MIN_PIN, BRN_GPIO_MAX_PIN);
         }
         cJSON_Delete(root);
         return ESP_ERR_INVALID_ARG;
@@ -132,9 +132,9 @@ esp_err_t tool_gpio_read_all_execute(const char *input_json, char *output, size_
     cursor += (size_t)written;
     remaining -= (size_t)written;
 
-    if (MIMI_GPIO_ALLOWED_CSV[0] != '\0') {
+    if (BRN_GPIO_ALLOWED_CSV[0] != '\0') {
         /* Iterate over explicit allowlist */
-        const char *csv_cursor = MIMI_GPIO_ALLOWED_CSV;
+        const char *csv_cursor = BRN_GPIO_ALLOWED_CSV;
         while (*csv_cursor != '\0') {
             char *endptr = NULL;
             long value;
@@ -168,7 +168,7 @@ esp_err_t tool_gpio_read_all_execute(const char *input_json, char *output, size_
         }
     } else {
         /* Iterate over default range */
-        for (int pin = MIMI_GPIO_MIN_PIN; pin <= MIMI_GPIO_MAX_PIN; pin++) {
+        for (int pin = BRN_GPIO_MIN_PIN; pin <= BRN_GPIO_MAX_PIN; pin++) {
             if (!gpio_policy_pin_is_allowed(pin)) continue;
 
             gpio_set_direction(pin, GPIO_MODE_INPUT);

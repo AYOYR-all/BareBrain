@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# MimiClaw Deployment Validator
+# BareBrain Deployment Validator
 # Usage: ./skills/deploy/scripts/validate.sh
 #
 # Checks that all prerequisites are met before building.
@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 cd "$PROJECT_ROOT"
 
-echo "MimiClaw Deployment Validator"
+echo "BareBrain Deployment Validator"
 echo "============================="
 echo ""
 
@@ -36,10 +36,10 @@ fi
 
 # 2. Project files
 echo "Project:"
-if [ -f main/mimi_config.h ]; then
-    pass "main/mimi_config.h exists"
+if [ -f main/brn_config.h ]; then
+    pass "main/brn_config.h exists"
 else
-    fail "main/mimi_config.h missing — wrong directory?"
+    fail "main/brn_config.h missing — wrong directory?"
 fi
 
 if [ -f partitions.csv ]; then
@@ -50,41 +50,41 @@ fi
 
 # 3. Secrets
 echo "Secrets:"
-if [ -f main/mimi_secrets.h ]; then
-    pass "main/mimi_secrets.h exists"
+if [ -f main/brn_secrets.h ]; then
+    pass "main/brn_secrets.h exists"
 
     # Check individual fields
-    if grep -q 'MIMI_SECRET_WIFI_SSID.*""' main/mimi_secrets.h; then
+    if grep -q 'BRN_SECRET_WIFI_SSID.*""' main/brn_secrets.h; then
         fail "WiFi SSID is empty"
     else
         pass "WiFi SSID configured"
     fi
 
-    if grep -q 'MIMI_SECRET_FEISHU_APP_ID.*""' main/mimi_secrets.h; then
+    if grep -q 'BRN_SECRET_FEISHU_APP_ID.*""' main/brn_secrets.h; then
         fail "Feishu app ID is empty"
     else
         pass "Feishu app ID configured"
     fi
 
-    if grep -q 'MIMI_SECRET_FEISHU_APP_SECRET.*""' main/mimi_secrets.h; then
+    if grep -q 'BRN_SECRET_FEISHU_APP_SECRET.*""' main/brn_secrets.h; then
         fail "Feishu app secret is empty"
     else
         pass "Feishu app secret configured"
     fi
 
-    if grep -q 'MIMI_SECRET_API_KEY.*""' main/mimi_secrets.h; then
+    if grep -q 'BRN_SECRET_API_KEY.*""' main/brn_secrets.h; then
         fail "Anthropic API key is empty"
     else
         pass "Anthropic API key configured"
     fi
 
-    if grep -q 'MIMI_SECRET_SEARCH_KEY.*""' main/mimi_secrets.h; then
+    if grep -q 'BRN_SECRET_SEARCH_KEY.*""' main/brn_secrets.h; then
         warn "Brave Search key not set (web_search will be unavailable)"
     else
         pass "Brave Search key configured"
     fi
 else
-    fail "main/mimi_secrets.h missing — run: cp main/mimi_secrets.h.example main/mimi_secrets.h"
+    fail "main/brn_secrets.h missing — run: cp main/brn_secrets.h.example main/brn_secrets.h"
 fi
 
 # 4. Serial port

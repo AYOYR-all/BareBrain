@@ -1,6 +1,6 @@
 #include "agent_loop.h"
 #include "agent/context_builder.h"
-#include "mimi_config.h"
+#include "brn_config.h"
 #include "bus/message_bus.h"
 #include "llm/llm_proxy.h"
 #include "memory/session_mgr.h"
@@ -62,7 +62,7 @@ static void json_set_string(cJSON *obj, const char *key, const char *value)
     cJSON_AddStringToObject(obj, key, value);
 }
 
-static void append_turn_context_prompt(char *prompt, size_t size, const mimi_msg_t *msg)
+static void append_turn_context_prompt(char *prompt, size_t size, const brn_msg_t *msg)
 {
     if (!prompt || size == 0 || !msg) {
         return;
@@ -87,7 +87,7 @@ static void append_turn_context_prompt(char *prompt, size_t size, const mimi_msg
     }
 }
 
-static char *patch_tool_input_with_context(const llm_tool_call_t *call, const mimi_msg_t *msg)
+static char *patch_tool_input_with_context(const llm_tool_call_t *call, const brn_msg_t *msg)
 {
     if (!call || !msg || strcmp(call->name, "cron_add") != 0) {
         return NULL;
@@ -135,7 +135,7 @@ static char *patch_tool_input_with_context(const llm_tool_call_t *call, const mi
 }
 
 /* Build the user message with tool_result blocks */
-static cJSON *build_tool_results(const llm_response_t *resp, const mimi_msg_t *msg,
+static cJSON *build_tool_results(const llm_response_t *resp, const brn_msg_t *msg,
                                  char *tool_output, size_t tool_output_size)
 {
     cJSON *content = cJSON_CreateArray();
@@ -171,8 +171,8 @@ static void agent_loop_task(void *arg)
     ESP_LOGI(TAG, "Agent loop started on core %d", xPortGetCoreID());
 
     /* Allocate large buffers from PSRAM */
-    char *system_prompt = heap_caps_calloc(1, MIMI_CONTEXT_BUF_SIZE, MALLOC_CAP_SPIRAM);
-    char *history_json = heap_caps_calloc(1, MIMI_LLM_STREAM_BUF_SIZE, MALLOC_CAP_SPIRAM);
+    char *system_prompt = heap_caps_calloc(1, BRN_CONTEXT_BUF_SIZE, MALLOC_CAP_SPIRAM);
+    char *history_json = heap_caps_calloc(1, BRN_LLM_STREAM_BUF_SIZE, MALLOC_CAP_SPIRAM);
     char *tool_output = heap_caps_calloc(1, TOOL_OUTPUT_SIZE, MALLOC_CAP_SPIRAM);
 
     if (!system_prompt || !history_json || !tool_output) {
@@ -184,20 +184,20 @@ static void agent_loop_task(void *arg)
     const char *tools_json = tool_registry_get_tools_json();
 
     while (1) {
-        mimi_msg_t msg;
+        brn_msg_t msg;
         esp_err_t err = message_bus_pop_inbound(&msg, UINT32_MAX);
         if (err != ESP_OK) continue;
 
         ESP_LOGI(TAG, "Processing message from %s:%s", msg.channel, msg.chat_id);
 
         /* 1. Build system prompt */
-        context_build_system_prompt(system_prompt, MIMI_CONTEXT_BUF_SIZE);
-        append_turn_context_prompt(system_prompt, MIMI_CONTEXT_BUF_SIZE, &msg);
+        context_build_system_prompt(system_prompt, BRN_CONTEXT_BUF_SIZE);
+        append_turn_context_prompt(system_prompt, BRN_CONTEXT_BUF_SIZE, &msg);
         ESP_LOGI(TAG, "LLM turn context: channel=%s chat_id=%s", msg.channel, msg.chat_id);
 
         /* 2. Load session history into cJSON array */
         session_get_history_json(msg.chat_id, history_json,
-                                 MIMI_LLM_STREAM_BUF_SIZE, MIMI_AGENT_MAX_HISTORY);
+                                 BRN_LLM_STREAM_BUF_SIZE, BRN_AGENT_MAX_HISTORY);
 
         cJSON *messages = cJSON_Parse(history_json);
         if (!messages) messages = cJSON_CreateArray();
@@ -213,14 +213,14 @@ static void agent_loop_task(void *arg)
         int iteration = 0;
         bool sent_working_status = false;
 
-        while (iteration < MIMI_AGENT_MAX_TOOL_ITER) {
+        while (iteration < BRN_AGENT_MAX_TOOL_ITER) {
             /* Send "working" indicator before each API call */
-#if MIMI_AGENT_SEND_WORKING_STATUS
-            if (!sent_working_status && strcmp(msg.channel, MIMI_CHAN_SYSTEM) != 0) {
-                mimi_msg_t status = {0};
+#if BRN_AGENT_SEND_WORKING_STATUS
+            if (!sent_working_status && strcmp(msg.channel, BRN_CHAN_SYSTEM) != 0) {
+                brn_msg_t status = {0};
                 strncpy(status.channel, msg.channel, sizeof(status.channel) - 1);
                 strncpy(status.chat_id, msg.chat_id, sizeof(status.chat_id) - 1);
-                status.content = strdup("\xF0\x9F\x90\xB1mimi is working...");
+                status.content = strdup("BRN is working...");
                 if (status.content) {
                     if (message_bus_push_outbound(&status) != ESP_OK) {
                         ESP_LOGW(TAG, "Outbound queue full, drop working status");
@@ -285,7 +285,7 @@ static void agent_loop_task(void *arg)
             }
 
             /* Push response to outbound */
-            mimi_msg_t out = {0};
+            brn_msg_t out = {0};
             strncpy(out.channel, msg.channel, sizeof(out.channel) - 1);
             strncpy(out.chat_id, msg.chat_id, sizeof(out.chat_id) - 1);
             out.content = final_text;  /* transfer ownership */
@@ -300,7 +300,7 @@ static void agent_loop_task(void *arg)
         } else {
             /* Error or empty response */
             free(final_text);
-            mimi_msg_t out = {0};
+            brn_msg_t out = {0};
             strncpy(out.channel, msg.channel, sizeof(out.channel) - 1);
             strncpy(out.chat_id, msg.chat_id, sizeof(out.chat_id) - 1);
             out.content = strdup("Sorry, I encountered an error.");
@@ -330,7 +330,7 @@ esp_err_t agent_loop_init(void)
 esp_err_t agent_loop_start(void)
 {
     const uint32_t stack_candidates[] = {
-        MIMI_AGENT_STACK,
+        BRN_AGENT_STACK,
         20 * 1024,
         16 * 1024,
         14 * 1024,
@@ -342,7 +342,7 @@ esp_err_t agent_loop_start(void)
         BaseType_t ret = xTaskCreatePinnedToCore(
             agent_loop_task, "agent_loop",
             stack_size, NULL,
-            MIMI_AGENT_PRIO, NULL, MIMI_AGENT_CORE);
+            BRN_AGENT_PRIO, NULL, BRN_AGENT_CORE);
 
         if (ret == pdPASS) {
             ESP_LOGI(TAG, "agent_loop task created with stack=%u bytes", (unsigned)stack_size);

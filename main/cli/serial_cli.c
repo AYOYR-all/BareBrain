@@ -1,5 +1,5 @@
 #include "serial_cli.h"
-#include "mimi_config.h"
+#include "brn_config.h"
 #include "wifi/wifi_manager.h"
 #include "channels/feishu/feishu_bot.h"
 #include "channels/relay/relay_client.h"
@@ -385,7 +385,7 @@ static int cmd_skill_list(int argc, char **argv)
 
     size_t n = skill_loader_build_summary(buf, 4096);
     if (n == 0) {
-        printf("No skills found under " MIMI_SKILLS_PREFIX ".\n");
+        printf("No skills found under " BRN_SKILLS_PREFIX ".\n");
     } else {
         printf("=== Skills ===\n%s", buf);
     }
@@ -412,9 +412,9 @@ static bool build_skill_path(const char *name, char *out, size_t out_size)
     if (strchr(name, '/') != NULL || strchr(name, '\\') != NULL) return false;
 
     if (has_md_suffix(name)) {
-        snprintf(out, out_size, MIMI_SKILLS_PREFIX "%s", name);
+        snprintf(out, out_size, BRN_SKILLS_PREFIX "%s", name);
     } else {
-        snprintf(out, out_size, MIMI_SKILLS_PREFIX "%s.md", name);
+        snprintf(out, out_size, BRN_SKILLS_PREFIX "%s.md", name);
     }
     return true;
 }
@@ -480,9 +480,9 @@ static int cmd_skill_search(int argc, char **argv)
     }
 
     const char *keyword = skill_search_args.keyword->sval[0];
-    DIR *dir = opendir(MIMI_SPIFFS_BASE);
+    DIR *dir = opendir(BRN_SPIFFS_BASE);
     if (!dir) {
-        printf("Cannot open " MIMI_SPIFFS_BASE ".\n");
+        printf("Cannot open " BRN_SPIFFS_BASE ".\n");
         return 1;
     }
 
@@ -500,7 +500,7 @@ static int cmd_skill_search(int argc, char **argv)
         if (strcmp(name + name_len - 3, ".md") != 0) continue;
 
         char full_path[296];
-        snprintf(full_path, sizeof(full_path), MIMI_SPIFFS_BASE "/%s", name);
+        snprintf(full_path, sizeof(full_path), BRN_SPIFFS_BASE "/%s", name);
 
         bool file_matched = contains_nocase(name, keyword);
         int matched_line = 0;
@@ -601,25 +601,25 @@ static int cmd_config_show(int argc, char **argv)
     (void)argc;
     (void)argv;
     printf("=== Current Configuration ===\n");
-    print_config("WiFi SSID",  MIMI_NVS_WIFI,   MIMI_NVS_KEY_SSID,     MIMI_SECRET_WIFI_SSID,  false);
-    print_config("WiFi Pass",  MIMI_NVS_WIFI,   MIMI_NVS_KEY_PASS,     MIMI_SECRET_WIFI_PASS,  true);
-    print_config("Feishu App ID", MIMI_NVS_FEISHU, MIMI_NVS_KEY_FEISHU_APP_ID,
-                 MIMI_SECRET_FEISHU_APP_ID, false);
-    print_config("Feishu Secret", MIMI_NVS_FEISHU, MIMI_NVS_KEY_FEISHU_APP_SECRET,
-                 MIMI_SECRET_FEISHU_APP_SECRET, true);
-    print_config("API Key",    MIMI_NVS_LLM,    MIMI_NVS_KEY_API_KEY,  MIMI_SECRET_API_KEY,    true);
-    print_config("Model",      MIMI_NVS_LLM,    MIMI_NVS_KEY_MODEL,    MIMI_SECRET_MODEL,      false);
-    print_config("Provider",   MIMI_NVS_LLM,    MIMI_NVS_KEY_PROVIDER, MIMI_SECRET_MODEL_PROVIDER, false);
-    print_config("Base URL",   MIMI_NVS_LLM,    MIMI_NVS_KEY_BASE_URL, MIMI_SECRET_BASE_URL,   false);
-    print_config("Relay URL",  MIMI_NVS_RELAY,  MIMI_NVS_KEY_RELAY_URL, MIMI_SECRET_RELAY_URL, false);
-    print_config("Relay Device", MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_DEVICE_ID,
-                 MIMI_SECRET_RELAY_DEVICE_ID, false);
-    print_config("Relay Secret", MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_DEVICE_SECRET,
-                 MIMI_SECRET_RELAY_DEVICE_SECRET, true);
-    print_config("Proxy Host", MIMI_NVS_PROXY,  MIMI_NVS_KEY_PROXY_HOST, MIMI_SECRET_PROXY_HOST, false);
-    print_config_u16("Proxy Port", MIMI_NVS_PROXY, MIMI_NVS_KEY_PROXY_PORT, MIMI_SECRET_PROXY_PORT);
-    print_config("Search Key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_API_KEY,  MIMI_SECRET_SEARCH_KEY, true);
-    print_config("Tavily Key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_TAVILY_KEY, MIMI_SECRET_TAVILY_KEY, true);
+    print_config("WiFi SSID",  BRN_NVS_WIFI,   BRN_NVS_KEY_SSID,     BRN_SECRET_WIFI_SSID,  false);
+    print_config("WiFi Pass",  BRN_NVS_WIFI,   BRN_NVS_KEY_PASS,     BRN_SECRET_WIFI_PASS,  true);
+    print_config("Feishu App ID", BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_ID,
+                 BRN_SECRET_FEISHU_APP_ID, false);
+    print_config("Feishu Secret", BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_SECRET,
+                 BRN_SECRET_FEISHU_APP_SECRET, true);
+    print_config("API Key",    BRN_NVS_LLM,    BRN_NVS_KEY_API_KEY,  BRN_SECRET_API_KEY,    true);
+    print_config("Model",      BRN_NVS_LLM,    BRN_NVS_KEY_MODEL,    BRN_SECRET_MODEL,      false);
+    print_config("Provider",   BRN_NVS_LLM,    BRN_NVS_KEY_PROVIDER, BRN_SECRET_MODEL_PROVIDER, false);
+    print_config("Base URL",   BRN_NVS_LLM,    BRN_NVS_KEY_BASE_URL, BRN_SECRET_BASE_URL,   false);
+    print_config("Relay URL",  BRN_NVS_RELAY,  BRN_NVS_KEY_RELAY_URL, BRN_SECRET_RELAY_URL, false);
+    print_config("Relay Device", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_ID,
+                 BRN_SECRET_RELAY_DEVICE_ID, false);
+    print_config("Relay Secret", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_SECRET,
+                 BRN_SECRET_RELAY_DEVICE_SECRET, true);
+    print_config("Proxy Host", BRN_NVS_PROXY,  BRN_NVS_KEY_PROXY_HOST, BRN_SECRET_PROXY_HOST, false);
+    print_config_u16("Proxy Port", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_PORT, BRN_SECRET_PROXY_PORT);
+    print_config("Search Key", BRN_NVS_SEARCH, BRN_NVS_KEY_API_KEY,  BRN_SECRET_SEARCH_KEY, true);
+    print_config("Tavily Key", BRN_NVS_SEARCH, BRN_NVS_KEY_TAVILY_KEY, BRN_SECRET_TAVILY_KEY, true);
     printf("=============================\n");
     return 0;
 }
@@ -630,7 +630,7 @@ static int cmd_config_reset(int argc, char **argv)
     (void)argc;
     (void)argv;
     const char *namespaces[] = {
-        MIMI_NVS_WIFI, MIMI_NVS_FEISHU, MIMI_NVS_LLM, MIMI_NVS_RELAY, MIMI_NVS_PROXY, MIMI_NVS_SEARCH
+        BRN_NVS_WIFI, BRN_NVS_FEISHU, BRN_NVS_LLM, BRN_NVS_RELAY, BRN_NVS_PROXY, BRN_NVS_SEARCH
     };
     const size_t namespace_count = sizeof(namespaces) / sizeof(namespaces[0]);
     for (size_t i = 0; i < namespace_count; i++) {
@@ -836,7 +836,7 @@ esp_err_t serial_cli_init(void)
 {
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
-    repl_config.prompt = "mimi> ";
+    repl_config.prompt = "brn> ";
     repl_config.max_cmdline_length = 256;
 
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
@@ -925,7 +925,7 @@ esp_err_t serial_cli_init(void)
     model_args.end = arg_end(1);
     esp_console_cmd_t model_cmd = {
         .command = "set_model",
-        .help = "Set LLM model (default: " MIMI_LLM_DEFAULT_MODEL ")",
+        .help = "Set LLM model (default: " BRN_LLM_DEFAULT_MODEL ")",
         .func = &cmd_set_model,
         .argtable = &model_args,
     };
@@ -947,7 +947,7 @@ esp_err_t serial_cli_init(void)
     provider_args.end = arg_end(1);
     esp_console_cmd_t provider_cmd = {
         .command = "set_model_provider",
-        .help = "Set LLM model provider (default: " MIMI_LLM_PROVIDER_DEFAULT ")",
+        .help = "Set LLM model provider (default: " BRN_LLM_PROVIDER_DEFAULT ")",
         .func = &cmd_set_model_provider,
         .argtable = &provider_args,
     };
@@ -956,7 +956,7 @@ esp_err_t serial_cli_init(void)
     /* skill_list */
     esp_console_cmd_t skill_list_cmd = {
         .command = "skill_list",
-        .help = "List installed skills from " MIMI_SKILLS_PREFIX,
+        .help = "List installed skills from " BRN_SKILLS_PREFIX,
         .func = &cmd_skill_list,
     };
     esp_console_cmd_register(&skill_list_cmd);

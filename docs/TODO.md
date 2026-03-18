@@ -1,4 +1,4 @@
-# MimiClaw Feature Tracker
+# BareBrain Feature Tracker
 
 > High-level gaps and next alignment items against the reference design.
 
@@ -8,7 +8,7 @@
 - Agent can read and edit files, but does not yet persist memory proactively through tool-use decisions.
 
 ### [ ] Richer message metadata
-- `mimi_msg_t` currently carries `channel`, `chat_id`, and plain text only.
+- `brn_msg_t` currently carries `channel`, `chat_id`, and plain text only.
 - Media, reply context, and structured metadata are still missing.
 
 ### [ ] Session metadata header

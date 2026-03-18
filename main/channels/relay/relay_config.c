@@ -1,6 +1,6 @@
 #include "relay_config.h"
 
-#include "mimi_config.h"
+#include "brn_config.h"
 
 #include <string.h>
 #include "nvs.h"
@@ -28,7 +28,7 @@ static void load_string_config(const char *ns,
 static esp_err_t save_string_config(const char *key, const char *value)
 {
     nvs_handle_t nvs;
-    esp_err_t err = nvs_open(MIMI_NVS_RELAY, NVS_READWRITE, &nvs);
+    esp_err_t err = nvs_open(BRN_NVS_RELAY, NVS_READWRITE, &nvs);
     if (err != ESP_OK) {
         return err;
     }
@@ -44,7 +44,7 @@ static esp_err_t save_string_config(const char *key, const char *value)
 static void clear_string_config(const char *key)
 {
     nvs_handle_t nvs;
-    if (nvs_open(MIMI_NVS_RELAY, NVS_READWRITE, &nvs) != ESP_OK) {
+    if (nvs_open(BRN_NVS_RELAY, NVS_READWRITE, &nvs) != ESP_OK) {
         return;
     }
     nvs_erase_key(nvs, key);
@@ -56,12 +56,12 @@ void relay_config_load(char *url, size_t url_size,
                        char *device_id, size_t device_id_size,
                        char *device_secret, size_t device_secret_size)
 {
-    load_string_config(MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_URL,
-                       MIMI_SECRET_RELAY_URL, url, url_size);
-    load_string_config(MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_DEVICE_ID,
-                       MIMI_SECRET_RELAY_DEVICE_ID, device_id, device_id_size);
-    load_string_config(MIMI_NVS_RELAY, MIMI_NVS_KEY_RELAY_DEVICE_SECRET,
-                       MIMI_SECRET_RELAY_DEVICE_SECRET,
+    load_string_config(BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_URL,
+                       BRN_SECRET_RELAY_URL, url, url_size);
+    load_string_config(BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_ID,
+                       BRN_SECRET_RELAY_DEVICE_ID, device_id, device_id_size);
+    load_string_config(BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_SECRET,
+                       BRN_SECRET_RELAY_DEVICE_SECRET,
                        device_secret, device_secret_size);
 }
 
@@ -69,24 +69,24 @@ esp_err_t relay_config_save(const char *url,
                             const char *device_id,
                             const char *device_secret)
 {
-    esp_err_t err = save_string_config(MIMI_NVS_KEY_RELAY_URL, url);
+    esp_err_t err = save_string_config(BRN_NVS_KEY_RELAY_URL, url);
     if (err != ESP_OK) {
         return err;
     }
 
-    err = save_string_config(MIMI_NVS_KEY_RELAY_DEVICE_ID, device_id);
+    err = save_string_config(BRN_NVS_KEY_RELAY_DEVICE_ID, device_id);
     if (err != ESP_OK) {
         return err;
     }
 
-    return save_string_config(MIMI_NVS_KEY_RELAY_DEVICE_SECRET, device_secret);
+    return save_string_config(BRN_NVS_KEY_RELAY_DEVICE_SECRET, device_secret);
 }
 
 esp_err_t relay_config_clear(void)
 {
-    clear_string_config(MIMI_NVS_KEY_RELAY_URL);
-    clear_string_config(MIMI_NVS_KEY_RELAY_DEVICE_ID);
-    clear_string_config(MIMI_NVS_KEY_RELAY_DEVICE_SECRET);
+    clear_string_config(BRN_NVS_KEY_RELAY_URL);
+    clear_string_config(BRN_NVS_KEY_RELAY_DEVICE_ID);
+    clear_string_config(BRN_NVS_KEY_RELAY_DEVICE_SECRET);
     return ESP_OK;
 }
 

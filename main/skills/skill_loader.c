@@ -1,5 +1,5 @@
 #include "skills/skill_loader.h"
-#include "mimi_config.h"
+#include "brn_config.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -17,7 +17,7 @@ esp_err_t skill_loader_init(void)
 {
     ESP_LOGI(TAG, "Initializing skills system");
 
-    DIR *dir = opendir(MIMI_SPIFFS_BASE);
+    DIR *dir = opendir(BRN_SPIFFS_BASE);
     if (!dir) {
         ESP_LOGW(TAG, "Cannot open SPIFFS — skills may not be available");
         return ESP_OK;
@@ -100,7 +100,7 @@ static void extract_description(FILE *f, char *out, size_t out_size)
 
 size_t skill_loader_build_summary(char *buf, size_t size)
 {
-    DIR *dir = opendir(MIMI_SPIFFS_BASE);
+    DIR *dir = opendir(BRN_SPIFFS_BASE);
     if (!dir) {
         ESP_LOGW(TAG, "Cannot open SPIFFS for skill enumeration");
         buf[0] = '\0';
@@ -126,7 +126,7 @@ size_t skill_loader_build_summary(char *buf, size_t size)
 
         /* Build full path */
         char full_path[296];
-        snprintf(full_path, sizeof(full_path), "%s/%s", MIMI_SPIFFS_BASE, name);
+        snprintf(full_path, sizeof(full_path), "%s/%s", BRN_SPIFFS_BASE, name);
 
         FILE *f = fopen(full_path, "r");
         if (!f) continue;

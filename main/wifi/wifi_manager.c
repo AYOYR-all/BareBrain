@@ -1,5 +1,5 @@
 #include "wifi_manager.h"
-#include "mimi_config.h"
+#include "brn_config.h"
 
 #include <string.h>
 #include <inttypes.h>
@@ -45,19 +45,19 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         if (disc) {
             ESP_LOGW(TAG, "Disconnected (reason=%d:%s)", disc->reason, wifi_reason_to_str(disc->reason));
         }
-        if (s_reconnect_enabled && s_retry_count < MIMI_WIFI_MAX_RETRY) {
+        if (s_reconnect_enabled && s_retry_count < BRN_WIFI_MAX_RETRY) {
             /* Exponential backoff: 1s, 2s, 4s, 8s, ... capped at 30s */
-            uint32_t delay_ms = MIMI_WIFI_RETRY_BASE_MS << s_retry_count;
-            if (delay_ms > MIMI_WIFI_RETRY_MAX_MS) {
-                delay_ms = MIMI_WIFI_RETRY_MAX_MS;
+            uint32_t delay_ms = BRN_WIFI_RETRY_BASE_MS << s_retry_count;
+            if (delay_ms > BRN_WIFI_RETRY_MAX_MS) {
+                delay_ms = BRN_WIFI_RETRY_MAX_MS;
             }
             ESP_LOGW(TAG, "Disconnected, retry %d/%d in %" PRIu32 "ms",
-                     s_retry_count + 1, MIMI_WIFI_MAX_RETRY, delay_ms);
+                     s_retry_count + 1, BRN_WIFI_MAX_RETRY, delay_ms);
             vTaskDelay(pdMS_TO_TICKS(delay_ms));
             esp_wifi_connect();
             s_retry_count++;
         } else {
-            ESP_LOGE(TAG, "Failed to connect after %d retries", MIMI_WIFI_MAX_RETRY);
+            ESP_LOGE(TAG, "Failed to connect after %d retries", BRN_WIFI_MAX_RETRY);
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
@@ -97,11 +97,11 @@ esp_err_t wifi_manager_start(void)
 
     /* NVS overrides take highest priority (set via CLI) */
     nvs_handle_t nvs;
-    if (nvs_open(MIMI_NVS_WIFI, NVS_READONLY, &nvs) == ESP_OK) {
+    if (nvs_open(BRN_NVS_WIFI, NVS_READONLY, &nvs) == ESP_OK) {
         size_t len = sizeof(wifi_cfg.sta.ssid);
-        if (nvs_get_str(nvs, MIMI_NVS_KEY_SSID, (char *)wifi_cfg.sta.ssid, &len) == ESP_OK) {
+        if (nvs_get_str(nvs, BRN_NVS_KEY_SSID, (char *)wifi_cfg.sta.ssid, &len) == ESP_OK) {
             len = sizeof(wifi_cfg.sta.password);
-            nvs_get_str(nvs, MIMI_NVS_KEY_PASS, (char *)wifi_cfg.sta.password, &len);
+            nvs_get_str(nvs, BRN_NVS_KEY_PASS, (char *)wifi_cfg.sta.password, &len);
             found = true;
         }
         nvs_close(nvs);
@@ -109,9 +109,9 @@ esp_err_t wifi_manager_start(void)
 
     /* Fall back to build-time secrets */
     if (!found) {
-        if (MIMI_SECRET_WIFI_SSID[0] != '\0') {
-            strncpy((char *)wifi_cfg.sta.ssid, MIMI_SECRET_WIFI_SSID, sizeof(wifi_cfg.sta.ssid) - 1);
-            strncpy((char *)wifi_cfg.sta.password, MIMI_SECRET_WIFI_PASS, sizeof(wifi_cfg.sta.password) - 1);
+        if (BRN_SECRET_WIFI_SSID[0] != '\0') {
+            strncpy((char *)wifi_cfg.sta.ssid, BRN_SECRET_WIFI_SSID, sizeof(wifi_cfg.sta.ssid) - 1);
+            strncpy((char *)wifi_cfg.sta.password, BRN_SECRET_WIFI_PASS, sizeof(wifi_cfg.sta.password) - 1);
             found = true;
         }
     }
@@ -157,9 +157,9 @@ const char *wifi_manager_get_ip(void)
 esp_err_t wifi_manager_set_credentials(const char *ssid, const char *password)
 {
     nvs_handle_t nvs;
-    ESP_ERROR_CHECK(nvs_open(MIMI_NVS_WIFI, NVS_READWRITE, &nvs));
-    ESP_ERROR_CHECK(nvs_set_str(nvs, MIMI_NVS_KEY_SSID, ssid));
-    ESP_ERROR_CHECK(nvs_set_str(nvs, MIMI_NVS_KEY_PASS, password));
+    ESP_ERROR_CHECK(nvs_open(BRN_NVS_WIFI, NVS_READWRITE, &nvs));
+    ESP_ERROR_CHECK(nvs_set_str(nvs, BRN_NVS_KEY_SSID, ssid));
+    ESP_ERROR_CHECK(nvs_set_str(nvs, BRN_NVS_KEY_PASS, password));
     ESP_ERROR_CHECK(nvs_commit(nvs));
     nvs_close(nvs);
     ESP_LOGI(TAG, "WiFi credentials saved for SSID: %s", ssid);
@@ -238,16 +238,16 @@ bool wifi_manager_has_credentials(void)
 {
     /* Check NVS first */
     nvs_handle_t nvs;
-    if (nvs_open(MIMI_NVS_WIFI, NVS_READONLY, &nvs) == ESP_OK) {
+    if (nvs_open(BRN_NVS_WIFI, NVS_READONLY, &nvs) == ESP_OK) {
         char ssid[33] = {0};
         size_t len = sizeof(ssid);
-        esp_err_t err = nvs_get_str(nvs, MIMI_NVS_KEY_SSID, ssid, &len);
+        esp_err_t err = nvs_get_str(nvs, BRN_NVS_KEY_SSID, ssid, &len);
         nvs_close(nvs);
         if (err == ESP_OK && ssid[0] != '\0') return true;
     }
 
     /* Fall back to build-time secrets */
-    if (MIMI_SECRET_WIFI_SSID[0] != '\0') return true;
+    if (BRN_SECRET_WIFI_SSID[0] != '\0') return true;
 
     return false;
 }

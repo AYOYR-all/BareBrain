@@ -1,7 +1,7 @@
 #include "relay_client.h"
 #include "relay_config.h"
 
-#include "mimi_config.h"
+#include "brn_config.h"
 #include "bus/message_bus.h"
 
 #include <stdlib.h>
@@ -88,8 +88,8 @@ static void handle_inbound_message(cJSON *root)
         return;
     }
 
-    mimi_msg_t msg = {0};
-    strlcpy(msg.channel, MIMI_CHAN_RELAY, sizeof(msg.channel));
+    brn_msg_t msg = {0};
+    strlcpy(msg.channel, BRN_CHAN_RELAY, sizeof(msg.channel));
     strlcpy(msg.chat_id, chat_id, sizeof(msg.chat_id));
     msg.content = strdup(content);
     if (!msg.content) {
@@ -201,9 +201,9 @@ esp_err_t relay_client_start(void)
     esp_websocket_client_config_t ws_cfg = {
         .uri = s_url,
         .buffer_size = 2048,
-        .task_stack = MIMI_RELAY_STACK,
-        .reconnect_timeout_ms = MIMI_RELAY_RECONNECT_MS,
-        .network_timeout_ms = MIMI_RELAY_NETWORK_TIMEOUT_MS,
+        .task_stack = BRN_RELAY_STACK,
+        .reconnect_timeout_ms = BRN_RELAY_RECONNECT_MS,
+        .network_timeout_ms = BRN_RELAY_NETWORK_TIMEOUT_MS,
         .disable_auto_reconnect = false,
         .crt_bundle_attach = esp_crt_bundle_attach,
     };

@@ -1,14 +1,14 @@
 # Feishu / Lark Bot Configuration Guide
 
-This guide sets up MimiClaw as a Feishu/Lark-connected AI assistant.
+This guide sets up BareBrain as a Feishu/Lark-connected AI assistant.
 
 ## Overview
 
-MimiClaw currently keeps one bot-style IM channel: **Feishu / Lark**.
+BareBrain currently keeps one bot-style IM channel: **Feishu / Lark**.
 
 The integration uses:
 
-- **Feishu app credentials** stored in MimiClaw
+- **Feishu app credentials** stored in BareBrain
 - **Feishu callback WebSocket** for inbound events
 - **Feishu REST API** for outbound replies
 
@@ -18,7 +18,7 @@ Unlike a webhook deployment, the ESP32 does **not** need a public HTTP callback 
 
 - A Feishu account or a Lark account
 - Permission to create a custom app on [Feishu Open Platform](https://open.feishu.cn/) or [Lark Developer](https://open.larksuite.com/)
-- An ESP32-S3 running MimiClaw with normal internet access
+- An ESP32-S3 running BareBrain with normal internet access
 
 ## Step 1: Create the App
 
@@ -45,17 +45,17 @@ Enable Feishu/Lark event delivery for message receive events used by bots.
 
 - Subscribe to the event used for new messages, such as `im.message.receive_v1`.
 - Choose the platform-managed callback/WebSocket mode supported by your console.
-- No MimiClaw webhook URL is required.
+- No BareBrain webhook URL is required.
 
-## Step 4: Configure MimiClaw
+## Step 4: Configure BareBrain
 
 ### Build-time configuration
 
-Edit `main/mimi_secrets.h`:
+Edit `main/brn_secrets.h`:
 
 ```c
-#define MIMI_SECRET_FEISHU_APP_ID     "cli_xxxxxxxxxxxxxx"
-#define MIMI_SECRET_FEISHU_APP_SECRET "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#define BRN_SECRET_FEISHU_APP_ID     "cli_xxxxxxxxxxxxxx"
+#define BRN_SECRET_FEISHU_APP_SECRET "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 ### Runtime configuration
@@ -63,24 +63,24 @@ Edit `main/mimi_secrets.h`:
 From the serial CLI:
 
 ```text
-mimi> set_feishu_creds cli_xxxxxxxxxxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-mimi> config_show
+brn> set_feishu_creds cli_xxxxxxxxxxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+brn> config_show
 ```
 
 You should see the Feishu app ID and a masked secret in the config output.
 
 ## Step 5: Start and Verify
 
-1. Boot MimiClaw and connect it to Wi-Fi.
+1. Boot BareBrain and connect it to Wi-Fi.
 2. Confirm logs show Feishu credentials loaded and WebSocket mode enabled.
 3. Open Feishu/Lark and find your bot.
 4. Send a text message.
-5. MimiClaw should reply in the same conversation.
+5. BareBrain should reply in the same conversation.
 
 For a direct send smoke test from serial CLI:
 
 ```text
-mimi> feishu_send ou_xxxxxxxxxxxx "hello from MimiClaw"
+brn> feishu_send ou_xxxxxxxxxxxx "hello from BRN"
 ```
 
 ## Notes About Networking
@@ -89,7 +89,7 @@ mimi> feishu_send ou_xxxxxxxxxxxx "hello from MimiClaw"
 - If your network requires a proxy, configure it with:
 
 ```text
-mimi> set_proxy 192.168.1.83 7897 http
+brn> set_proxy 192.168.1.83 7897 http
 ```
 
 - The proxy must allow outbound HTTPS traffic for Feishu and the configured LLM provider.
