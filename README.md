@@ -1,25 +1,16 @@
-# MimiClaw: Pocket AI Assistant on a $5 Chip
-
-<p align="center">
-  <img src="assets/banner.png" alt="MimiClaw" width="500" />
-</p>
-
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="https://deepwiki.com/memovai/mimiclaw"><img src="https://img.shields.io/badge/DeepWiki-mimiclaw-blue.svg" alt="DeepWiki"></a>
-  <a href="https://discord.gg/r8ZxSvB8Yr"><img src="https://img.shields.io/badge/Discord-mimiclaw-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://x.com/ssslvky"><img src="https://img.shields.io/badge/X-@ssslvky-black?logo=x" alt="X"></a>
-</p>
+# BareBrain
 
 <p align="center">
   <strong><a href="README.md">English</a> | <a href="README_CN.md">中文</a> | <a href="README_JA.md">日本語</a></strong>
 </p>
 
-**The world's first AI assistant(OpenClaw) on a $5 chip. No Linux. No Node.js. Just pure C**
+> BareBrain is a derivative work based on [memovai/mimiclaw](https://github.com/memovai/mimiclaw) and distributed under the MIT License. Firmware internals, CLI prompts, and some device-facing strings still keep the historical `MimiClaw` naming, so literal names in commands, logs, and AP labels remain unchanged below when they reflect actual runtime behavior.
 
-MimiClaw turns a tiny ESP32-S3 board into a personal AI assistant. Plug it into USB power, connect to WiFi, and talk to it through ClawApp over local WebSocket or through Feishu/Lark if you still want that channel — it handles any task you throw at it and evolves over time with local memory — all on a chip the size of a thumb.
+**Pocket AI assistant firmware for ESP32-S3. No Linux. No Node.js. Just pure C.**
 
-## Meet MimiClaw
+BareBrain turns a tiny ESP32-S3 board into a personal AI assistant. Plug it into USB power, connect to WiFi, and talk to it through ClawApp over local WebSocket or through Feishu/Lark if you still want that channel — it handles any task you throw at it and evolves over time with local memory — all on a chip the size of a thumb.
+
+## Meet BareBrain
 
 - **Tiny** — No Linux, no Node.js, no bloat — just pure C
 - **Handy** — Message it from ClawApp on your LAN, or keep Feishu/Lark as an optional channel
@@ -28,8 +19,6 @@ MimiClaw turns a tiny ESP32-S3 board into a personal AI assistant. Plug it into 
 - **Lovable** — One ESP32-S3 board, $5, nothing else
 
 ## How It Works
-
-![](assets/mimiclaw.png)
 
 You send a message from ClawApp over the local WebSocket gateway, or from Feishu/Lark if that channel is configured. The ESP32-S3 picks it up over WiFi, feeds it into an agent loop — the LLM thinks, calls tools, reads memory — and sends the reply back. Supports both **Anthropic (Claude)** and **OpenAI (GPT)** as providers, switchable at runtime. Everything runs on a single $5 chip with all your data stored locally on flash.
 
@@ -50,8 +39,8 @@ You send a message from ClawApp over the local WebSocket gateway, or from Feishu
 # You need ESP-IDF v5.5+ installed first:
 # https://docs.espressif.com/projects/esp-idf/en/v5.5.2/esp32s3/get-started/
 
-git clone https://github.com/memovai/mimiclaw.git
-cd mimiclaw
+git clone https://github.com/fraternity-z/BareBrain.git
+cd BareBrain
 
 idf.py set-target esp32s3
 ```
@@ -309,28 +298,10 @@ Technical details live in the `docs/` folder:
 
 Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** before opening issues or pull requests.
 
-## Contributors
-
-Thanks to everyone who has contributed to MimiClaw.
-
-<a href="https://github.com/memovai/mimiclaw/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=memovai/mimiclaw" alt="MimiClaw contributors" />
-</a>
-
 ## License
 
-MIT
+MIT. BareBrain includes derivative work based on [memovai/mimiclaw](https://github.com/memovai/mimiclaw) under the same license.
 
 ## Acknowledgments
 
-Inspired by [OpenClaw](https://github.com/openclaw/openclaw) and [Nanobot](https://github.com/HKUDS/nanobot). MimiClaw reimplements the core AI agent architecture for embedded hardware — no Linux, no server, just a $5 chip.
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=memovai%2Fmimiclaw&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=memovai/mimiclaw&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=memovai/mimiclaw&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=memovai/mimiclaw&type=date&legend=top-left" />
- </picture>
-</a>
+BareBrain is based on [memovai/mimiclaw](https://github.com/memovai/mimiclaw) and also draws inspiration from [OpenClaw](https://github.com/openclaw/openclaw) and [Nanobot](https://github.com/HKUDS/nanobot).

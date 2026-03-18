@@ -1,25 +1,16 @@
-# MimiClaw: $5 芯片上的口袋 AI 助理
-
-<p align="center">
-  <img src="assets/banner.png" alt="MimiClaw" width="500" />
-</p>
-
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="https://deepwiki.com/memovai/mimiclaw"><img src="https://img.shields.io/badge/DeepWiki-mimiclaw-blue.svg" alt="DeepWiki"></a>
-  <a href="https://discord.gg/r8ZxSvB8Yr"><img src="https://img.shields.io/badge/Discord-mimiclaw-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://x.com/ssslvky"><img src="https://img.shields.io/badge/X-@ssslvky-black?logo=x" alt="X"></a>
-</p>
+# BareBrain
 
 <p align="center">
   <strong><a href="README.md">English</a> | <a href="README_CN.md">中文</a> | <a href="README_JA.md">日本語</a></strong>
 </p>
 
-**$5 芯片上的 AI 助理（OpenClaw）。没有 Linux，没有 Node.js，纯 C。**
+> BareBrain 基于 [memovai/mimiclaw](https://github.com/memovai/mimiclaw) 按 MIT 协议二次开发。当前固件内部、CLI 提示符以及部分面向设备的字符串仍保留历史上的 `MimiClaw` 命名，因此下文凡是涉及命令、日志或 AP 名称等实际运行字面值时，会继续沿用该名称。
 
-MimiClaw 把一块小小的 ESP32-S3 开发板变成你的私人 AI 助理。插上 USB 供电，连上 WiFi 后，你可以优先用同一局域网里的 ClawApp 通过 WebSocket 跟它对话；如果还想保留飞书/Lark，也可以继续接入那个通道。它能处理你丢给它的任何任务，还会随时间积累本地记忆不断进化 — 全部跑在一颗拇指大小的芯片上。
+**面向 ESP32-S3 的口袋 AI 助理固件。没有 Linux，没有 Node.js，纯 C。**
 
-## 认识 MimiClaw
+BareBrain 把一块小小的 ESP32-S3 开发板变成你的私人 AI 助理。插上 USB 供电，连上 WiFi 后，你可以优先用同一局域网里的 ClawApp 通过 WebSocket 跟它对话；如果还想保留飞书/Lark，也可以继续接入那个通道。它能处理你丢给它的任何任务，还会随时间积累本地记忆不断进化 — 全部跑在一颗拇指大小的芯片上。
+
+## 认识 BareBrain
 
 - **小巧** — 没有 Linux，没有 Node.js，没有臃肿依赖 — 纯 C
 - **好用** — 在局域网里的 ClawApp 发消息，或者把飞书/Lark 当成可选通道
@@ -28,8 +19,6 @@ MimiClaw 把一块小小的 ESP32-S3 开发板变成你的私人 AI 助理。插
 - **可爱** — 一块 ESP32-S3 开发板，$5，没了
 
 ## 工作原理
-
-![](assets/mimiclaw.png)
 
 你可以在 ClawApp 里通过本地 WebSocket 发一条消息，或者在仍然配置了飞书/Lark 时继续从那个通道发消息。ESP32-S3 通过 WiFi 收到后送进 Agent 循环 — LLM 思考、调用工具、读取记忆 — 再把回复发回来。同时支持 **Anthropic (Claude)** 和 **OpenAI (GPT)** 两种提供商，运行时可切换。一切都跑在一颗 $5 的芯片上，所有数据存在本地 Flash。
 
@@ -50,8 +39,8 @@ MimiClaw 把一块小小的 ESP32-S3 开发板变成你的私人 AI 助理。插
 # 需要先安装 ESP-IDF v5.5+:
 # https://docs.espressif.com/projects/esp-idf/en/v5.5.2/esp32s3/get-started/
 
-git clone https://github.com/memovai/mimiclaw.git
-cd mimiclaw
+git clone https://github.com/fraternity-z/BareBrain.git
+cd BareBrain
 
 idf.py set-target esp32s3
 ```
@@ -323,28 +312,10 @@ MimiClaw 内置 cron 调度器，让 AI 可以自主安排任务。LLM 可以通
 
 提交 Issue 或 Pull Request 前，请先阅读 **[CONTRIBUTING.md](CONTRIBUTING.md)**。
 
-## 贡献者
-
-感谢所有为 MimiClaw 做出贡献的开发者。
-
-<a href="https://github.com/memovai/mimiclaw/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=memovai/mimiclaw" alt="MimiClaw contributors" />
-</a>
-
 ## 许可证
 
-MIT
+MIT。BareBrain 包含基于 [memovai/mimiclaw](https://github.com/memovai/mimiclaw) 的二次开发内容，并沿用同一许可证。
 
 ## 致谢
 
-灵感来自 [OpenClaw](https://github.com/openclaw/openclaw) 和 [Nanobot](https://github.com/HKUDS/nanobot)。MimiClaw 为嵌入式硬件重新实现了核心 AI Agent 架构 — 没有 Linux，没有服务器，只有一颗 $5 的芯片。
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=memovai%2Fmimiclaw&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=memovai/mimiclaw&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=memovai/mimiclaw&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=memovai/mimiclaw&type=date&legend=top-left" />
- </picture>
-</a>
+BareBrain 基于 [memovai/mimiclaw](https://github.com/memovai/mimiclaw) 演进，也参考了 [OpenClaw](https://github.com/openclaw/openclaw) 和 [Nanobot](https://github.com/HKUDS/nanobot) 的设计思路。
