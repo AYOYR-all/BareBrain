@@ -112,7 +112,7 @@
 #define BRN_SD_BASE                 "/sdcard"
 #define BRN_SD_MODE_DISABLED        0
 #define BRN_SD_MODE_SDMMC           1
-#define BRN_SD_MODE_SPI             2
+/* BRN_SD_MODE supports only disabled or SDMMC / SDIO 4-bit. */
 #define BRN_SD_MODE                 BRN_SD_MODE_SDMMC
 #define BRN_SD_PREFER_DATA          1
 #define BRN_SD_MAX_FILES            8
@@ -128,13 +128,6 @@
 #define BRN_SDMMC_PIN_D3            13
 #define BRN_SDMMC_PIN_CD            -1
 #define BRN_SDMMC_PIN_WP            -1
-#define BRN_SDSPI_PIN_MISO          6
-#define BRN_SDSPI_PIN_MOSI          4
-#define BRN_SDSPI_PIN_CLK           5
-#define BRN_SDSPI_PIN_CS            1
-#define BRN_SDSPI_PIN_CD            -1
-#define BRN_SDSPI_PIN_WP            -1
-#define BRN_SDSPI_MAX_TRANSFER      4096
 #define BRN_MEMORY_FILE             BRN_SPIFFS_MEMORY_DIR "/MEMORY.md"
 #define BRN_SOUL_FILE               BRN_SPIFFS_CONFIG_DIR "/SOUL.md"
 #define BRN_USER_FILE               BRN_SPIFFS_CONFIG_DIR "/USER.md"

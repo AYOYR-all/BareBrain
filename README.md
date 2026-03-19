@@ -258,9 +258,9 @@ For example:
 
 ## SD Card Storage
 
-The current firmware enables `SDMMC / SDIO 4-bit` mode by default. You do not need to type a mount command manually. On boot, the device mounts `/spiffs` first and then tries to mount `/sdcard`. If SD mount succeeds, memory, sessions, and docs prefer the SD card. If it fails, the firmware logs the error clearly and keeps using SPIFFS.
+The current firmware supports only `SDMMC / SDIO 4-bit`. You do not need to type a mount command manually. On boot, the device mounts `/spiffs` first and then tries to mount `/sdcard`. If SD mount succeeds, memory, sessions, and docs prefer the SD card. If it fails, the firmware logs the error clearly and keeps using SPIFFS.
 
-For the dual-mode TF module shown in the wiring photo, use this mapping with the current default firmware:
+For the current `SDMMC / SDIO 4-bit` firmware, wire the TF module like this:
 
 | Module label | ESP32-S3 GPIO |
 |------|------|
@@ -276,9 +276,8 @@ For the dual-mode TF module shown in the wiring photo, use this mapping with the
 Wiring notes:
 
 - `VCC` must go to `3.3V`, not `5V`
-- With the default firmware, interpret the silk labels in `SDIO` mode, not `SPI` mode
+- Interpret the silk labels in `SDIO` mode
 - `CS / D03` is required because in `SDIO 4-bit` mode it is `D3`
-- If you later want `SPI` mode instead, change `BRN_SD_MODE` in `main/brn_config.h`
 
 After wiring and powering on, verify mount status from the serial CLI:
 

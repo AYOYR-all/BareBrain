@@ -10,8 +10,6 @@
 
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
-#include "driver/sdspi_host.h"
-#include "driver/spi_master.h"
 #include "esp_check.h"
 #include "esp_log.h"
 #include "esp_spiffs.h"
@@ -27,7 +25,6 @@ static size_t s_spiffs_total = 0;
 static size_t s_spiffs_used = 0;
 static sdmmc_card_t *s_sd_card = NULL;
 static const char *s_sd_interface = "disabled";
-static bool s_spi_bus_initialized = false;
 
 static gpio_num_t to_gpio_num(int pin)
 {
@@ -80,56 +77,22 @@ static esp_err_t mount_sd_sdmmc(void)
     return esp_vfs_fat_sdmmc_mount(BRN_SD_BASE, &host, &slot, &mount_config, &s_sd_card);
 }
 
-static esp_err_t mount_sd_spi(void)
-{
-    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
-    sdspi_device_config_t slot = SDSPI_DEVICE_CONFIG_DEFAULT();
-    esp_vfs_fat_mount_config_t mount_config = VFS_FAT_MOUNT_DEFAULT_CONFIG();
-    spi_bus_config_t bus_cfg = {
-        .mosi_io_num = BRN_SDSPI_PIN_MOSI,
-        .miso_io_num = BRN_SDSPI_PIN_MISO,
-        .sclk_io_num = BRN_SDSPI_PIN_CLK,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-        .max_transfer_sz = BRN_SDSPI_MAX_TRANSFER,
-    };
-
-    ESP_RETURN_ON_ERROR(spi_bus_initialize(SPI2_HOST, &bus_cfg, SPI_DMA_CH_AUTO), TAG,
-                        "SDSPI bus init failed");
-    s_spi_bus_initialized = true;
-
-    host.slot = SPI2_HOST;
-    host.max_freq_khz = BRN_SD_MAX_FREQ_KHZ;
-    slot.host_id = SPI2_HOST;
-    slot.gpio_cs = to_gpio_num(BRN_SDSPI_PIN_CS);
-    slot.gpio_cd = to_gpio_num(BRN_SDSPI_PIN_CD);
-    slot.gpio_wp = to_gpio_num(BRN_SDSPI_PIN_WP);
-
-    mount_config.max_files = BRN_SD_MAX_FILES;
-    mount_config.format_if_mount_failed = BRN_SD_FORMAT_IF_MOUNT_FAILED;
-    mount_config.allocation_unit_size = BRN_SD_ALLOCATION_UNIT_SIZE;
-    return esp_vfs_fat_sdspi_mount(BRN_SD_BASE, &host, &slot, &mount_config, &s_sd_card);
-}
-
 static void reset_sd_state(void)
 {
     s_sd_mounted = false;
     s_sd_card = NULL;
-    if (s_spi_bus_initialized) {
-        spi_bus_free(SPI2_HOST);
-        s_spi_bus_initialized = false;
-    }
 }
 
 static esp_err_t mount_sd(void)
 {
     if (BRN_SD_MODE == BRN_SD_MODE_DISABLED) {
         s_sd_interface = "disabled";
+        s_sd_last_error = ESP_OK;
         return ESP_OK;
     }
 
-    s_sd_interface = BRN_SD_MODE == BRN_SD_MODE_SPI ? "spi" : "sdmmc";
-    s_sd_last_error = BRN_SD_MODE == BRN_SD_MODE_SPI ? mount_sd_spi() : mount_sd_sdmmc();
+    s_sd_interface = "sdmmc";
+    s_sd_last_error = mount_sd_sdmmc();
     if (s_sd_last_error != ESP_OK) {
         reset_sd_state();
         ESP_LOGW(TAG, "SD mount failed on %s: %s", s_sd_interface, esp_err_to_name(s_sd_last_error));

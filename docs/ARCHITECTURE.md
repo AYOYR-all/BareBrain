@@ -79,7 +79,7 @@ main/
   - serial CLI (`set_feishu_creds`, `set_api_key`, `set_model`, `set_proxy`, ...)
   - onboarding/admin portal at `http://192.168.4.1`
 - Feishu credentials are stored under the `feishu_config` NVS namespace.
-- Default SD interface is `SDMMC / SDIO 4-bit`; pins are configured in `main/brn_config.h`.
+- SD card support uses `SDMMC / SDIO 4-bit`; pins are configured in `main/brn_config.h`.
 
 ## Task Layout
 
