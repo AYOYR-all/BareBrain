@@ -1,33 +1,26 @@
 #include "tools/tool_files.h"
 #include "brn_config.h"
+#include "storage/storage_fs.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <dirent.h>
-#include <sys/stat.h>
 #include "esp_log.h"
 #include "cJSON.h"
 
 static const char *TAG = "tool_files";
 
 #define MAX_FILE_SIZE (32 * 1024)
+#define PATH_ERROR_MSG "Error: path must start with " BRN_SPIFFS_BASE "/ or " BRN_SD_BASE "/ and must not contain '..'"
+#define PREFIX_ERROR_MSG "Error: prefix must start with " BRN_SPIFFS_BASE " or " BRN_SD_BASE " and must not contain '..'"
 
 /**
  * Validate that a path starts with BRN_SPIFFS_BASE and contains no ".." traversal.
  */
 static bool validate_path(const char *path)
 {
-    if (!path) return false;
-    size_t base_len = strlen(BRN_SPIFFS_BASE);
-    if (strncmp(path, BRN_SPIFFS_BASE, base_len) != 0) return false;
-    /* Require a path separator after the base (unless base ends with '/') */
-    if (base_len > 0 && BRN_SPIFFS_BASE[base_len - 1] != '/') {
-        if (path[base_len] != '/') return false;
-    }
-    if (strstr(path, "..") != NULL) return false;
-    return true;
+    return storage_fs_is_allowed_file_path(path);
 }
 
 /* ── read_file ─────────────────────────────────────────────── */
@@ -42,7 +35,7 @@ esp_err_t tool_read_file_execute(const char *input_json, char *output, size_t ou
 
     const char *path = cJSON_GetStringValue(cJSON_GetObjectItem(root, "path"));
     if (!validate_path(path)) {
-        snprintf(output, output_size, "Error: path must start with %s/ and must not contain '..'", BRN_SPIFFS_BASE);
+        snprintf(output, output_size, PATH_ERROR_MSG);
         cJSON_Delete(root);
         return ESP_ERR_INVALID_ARG;
     }
@@ -80,7 +73,7 @@ esp_err_t tool_write_file_execute(const char *input_json, char *output, size_t o
     const char *content = cJSON_GetStringValue(cJSON_GetObjectItem(root, "content"));
 
     if (!validate_path(path)) {
-        snprintf(output, output_size, "Error: path must start with %s/ and must not contain '..'", BRN_SPIFFS_BASE);
+        snprintf(output, output_size, PATH_ERROR_MSG);
         cJSON_Delete(root);
         return ESP_ERR_INVALID_ARG;
     }
@@ -88,6 +81,12 @@ esp_err_t tool_write_file_execute(const char *input_json, char *output, size_t o
         snprintf(output, output_size, "Error: missing 'content' field");
         cJSON_Delete(root);
         return ESP_ERR_INVALID_ARG;
+    }
+
+    if (storage_fs_ensure_parent_dir(path) != ESP_OK) {
+        snprintf(output, output_size, "Error: cannot prepare parent directory for %s", path);
+        cJSON_Delete(root);
+        return ESP_FAIL;
     }
 
     FILE *f = fopen(path, "w");
@@ -128,7 +127,7 @@ esp_err_t tool_edit_file_execute(const char *input_json, char *output, size_t ou
     const char *new_str = cJSON_GetStringValue(cJSON_GetObjectItem(root, "new_string"));
 
     if (!validate_path(path)) {
-        snprintf(output, output_size, "Error: path must start with %s/ and must not contain '..'", BRN_SPIFFS_BASE);
+        snprintf(output, output_size, PATH_ERROR_MSG);
         cJSON_Delete(root);
         return ESP_ERR_INVALID_ARG;
     }
@@ -229,34 +228,23 @@ esp_err_t tool_list_dir_execute(const char *input_json, char *output, size_t out
         }
     }
 
-    DIR *dir = opendir(BRN_SPIFFS_BASE);
-    if (!dir) {
-        snprintf(output, output_size, "Error: cannot open %s directory", BRN_SPIFFS_BASE);
+    if (!storage_fs_is_allowed_prefix(prefix)) {
+        snprintf(output, output_size, PREFIX_ERROR_MSG);
         cJSON_Delete(root);
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
-    size_t off = 0;
-    struct dirent *ent;
     int count = 0;
-
-    while ((ent = readdir(dir)) != NULL && off < output_size - 1) {
-        /* Build full path: SPIFFS entries are just filenames with embedded slashes */
-        char full_path[512];
-        snprintf(full_path, sizeof(full_path), "%s/%s", BRN_SPIFFS_BASE, ent->d_name);
-
-        if (prefix && strncmp(full_path, prefix, strlen(prefix)) != 0) {
-            continue;
-        }
-
-        off += snprintf(output + off, output_size - off, "%s\n", full_path);
-        count++;
+    esp_err_t err = storage_fs_list_paths(prefix, output, output_size, &count);
+    if (err == ESP_ERR_INVALID_STATE) {
+        snprintf(output, output_size, "Error: %s is not mounted", BRN_SD_BASE);
+        cJSON_Delete(root);
+        return err;
     }
-
-    closedir(dir);
-
-    if (count == 0) {
-        snprintf(output, output_size, "(no files found)");
+    if (err != ESP_OK) {
+        snprintf(output, output_size, "Error: failed to list files");
+        cJSON_Delete(root);
+        return err;
     }
 
     ESP_LOGI(TAG, "list_dir: %d files (prefix=%s)", count, prefix ? prefix : "(none)");

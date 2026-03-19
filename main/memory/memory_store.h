@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 /**
- * Initialize memory store. Ensures SPIFFS directories exist.
+ * Initialize memory store. Data is stored on SD when mounted, otherwise SPIFFS.
  */
 esp_err_t memory_store_init(void);
 

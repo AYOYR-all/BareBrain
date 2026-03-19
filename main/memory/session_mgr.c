@@ -1,5 +1,7 @@
 #include "session_mgr.h"
 #include "brn_config.h"
+#include "storage/storage_fs.h"
+#include "storage/storage_manager.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -13,19 +15,24 @@ static const char *TAG = "session";
 
 static void session_path(const char *chat_id, char *buf, size_t size)
 {
-    snprintf(buf, size, "%s/tg_%s.jsonl", BRN_SPIFFS_SESSION_DIR, chat_id);
+    snprintf(buf, size, "%s/sessions/tg_%s.jsonl", storage_get_data_base(), chat_id);
 }
 
 esp_err_t session_mgr_init(void)
 {
-    ESP_LOGI(TAG, "Session manager initialized at %s", BRN_SPIFFS_SESSION_DIR);
+    ESP_LOGI(TAG, "Session manager initialized at %s/sessions", storage_get_data_base());
     return ESP_OK;
 }
 
 esp_err_t session_append(const char *chat_id, const char *role, const char *content)
 {
-    char path[64];
+    char path[160];
     session_path(chat_id, path, sizeof(path));
+
+    if (storage_fs_ensure_parent_dir(path) != ESP_OK) {
+        ESP_LOGE(TAG, "Cannot prepare session dir for %s", path);
+        return ESP_FAIL;
+    }
 
     FILE *f = fopen(path, "a");
     if (!f) {
@@ -52,7 +59,7 @@ esp_err_t session_append(const char *chat_id, const char *role, const char *cont
 
 esp_err_t session_get_history_json(const char *chat_id, char *buf, size_t size, int max_msgs)
 {
-    char path[64];
+    char path[160];
     session_path(chat_id, path, sizeof(path));
 
     FILE *f = fopen(path, "r");
@@ -127,7 +134,7 @@ esp_err_t session_get_history_json(const char *chat_id, char *buf, size_t size, 
 
 esp_err_t session_clear(const char *chat_id)
 {
-    char path[64];
+    char path[160];
     session_path(chat_id, path, sizeof(path));
 
     if (remove(path) == 0) {
@@ -139,19 +146,17 @@ esp_err_t session_clear(const char *chat_id)
 
 void session_list(void)
 {
-    DIR *dir = opendir(BRN_SPIFFS_SESSION_DIR);
+    const char *session_dir = storage_data_on_sd() ? BRN_SD_BASE "/sessions" : BRN_SPIFFS_BASE;
+    DIR *dir = opendir(session_dir);
     if (!dir) {
-        /* SPIFFS is flat, so list all files matching pattern */
-        dir = opendir(BRN_SPIFFS_BASE);
-        if (!dir) {
-            ESP_LOGW(TAG, "Cannot open SPIFFS directory");
-            return;
-        }
+        ESP_LOGW(TAG, "Cannot open session directory: %s", session_dir);
+        return;
     }
 
     struct dirent *entry;
     int count = 0;
     while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
         if (strstr(entry->d_name, "tg_") && strstr(entry->d_name, ".jsonl")) {
             ESP_LOGI(TAG, "  Session: %s", entry->d_name);
             count++;

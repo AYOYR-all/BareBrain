@@ -12,6 +12,7 @@
 #include "cron/cron_service.h"
 #include "heartbeat/heartbeat.h"
 #include "skills/skill_loader.h"
+#include "storage/storage_manager.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -293,6 +294,31 @@ static int cmd_clear_proxy(int argc, char **argv)
 {
     http_proxy_clear();
     printf("Proxy cleared. Restart to apply.\n");
+    return 0;
+}
+
+/* --- storage_status command --- */
+static int cmd_storage_status(int argc, char **argv)
+{
+    brn_storage_status_t status = {0};
+    (void)argc;
+    (void)argv;
+
+    storage_get_status(&status);
+    printf("SPIFFS ready: %s\n", status.spiffs_ready ? "yes" : "no");
+    printf("SPIFFS usage: %u / %u bytes\n",
+           (unsigned int)status.spiffs_used_bytes,
+           (unsigned int)status.spiffs_total_bytes);
+    printf("SD enabled:   %s\n", status.sd_enabled ? "yes" : "no");
+    printf("SD mounted:   %s\n", status.sd_mounted ? "yes" : "no");
+    printf("SD interface: %s\n", status.sd_interface);
+    printf("Data base:    %s\n", status.data_base);
+    if (!status.sd_mounted && status.sd_enabled) {
+        printf("SD last err:  %s\n", esp_err_to_name(status.sd_last_error));
+    }
+    if (status.sd_mounted) {
+        storage_print_sd_info(stdout);
+    }
     return 0;
 }
 
@@ -1028,6 +1054,14 @@ esp_err_t serial_cli_init(void)
         .func = &cmd_heap_info,
     };
     esp_console_cmd_register(&heap_cmd);
+
+    /* storage_status */
+    esp_console_cmd_t storage_status_cmd = {
+        .command = "storage_status",
+        .help = "Show SPIFFS/SD mount status and active data location",
+        .func = &cmd_storage_status,
+    };
+    esp_console_cmd_register(&storage_status_cmd);
 
     /* set_search_key */
     search_key_args.key = arg_str1(NULL, NULL, "<key>", "Brave Search API key");

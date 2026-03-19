@@ -6,7 +6,6 @@
 #include "esp_event.h"
 #include "esp_system.h"
 #include "esp_heap_caps.h"
-#include "esp_spiffs.h"
 #include "nvs_flash.h"
 
 #include "brn_config.h"
@@ -26,6 +25,7 @@
 #include "heartbeat/heartbeat.h"
 #include "skills/skill_loader.h"
 #include "onboard/wifi_onboard.h"
+#include "storage/storage_manager.h"
 
 static const char *TAG = "brn";
 
@@ -38,28 +38,6 @@ static esp_err_t init_nvs(void)
         ret = nvs_flash_init();
     }
     return ret;
-}
-
-static esp_err_t init_spiffs(void)
-{
-    esp_vfs_spiffs_conf_t conf = {
-        .base_path = BRN_SPIFFS_BASE,
-        .partition_label = NULL,
-        .max_files = 10,
-        .format_if_mount_failed = true,
-    };
-
-    esp_err_t ret = esp_vfs_spiffs_register(&conf);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "SPIFFS mount failed: %s", esp_err_to_name(ret));
-        return ret;
-    }
-
-    size_t total = 0, used = 0;
-    esp_spiffs_info(NULL, &total, &used);
-    ESP_LOGI(TAG, "SPIFFS: total=%d, used=%d", (int)total, (int)used);
-
-    return ESP_OK;
 }
 
 /* Outbound dispatch task: reads from outbound queue and routes to channels */
@@ -118,7 +96,7 @@ void app_main(void)
     /* Phase 1: Core infrastructure */
     ESP_ERROR_CHECK(init_nvs());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    ESP_ERROR_CHECK(init_spiffs());
+    ESP_ERROR_CHECK(storage_init());
 
     /* Initialize subsystems */
     ESP_ERROR_CHECK(message_bus_init());

@@ -104,11 +104,37 @@
 #define BRN_OUTBOUND_PRIO           5
 #define BRN_OUTBOUND_CORE           0
 
-/* Memory / SPIFFS */
+/* Storage */
 #define BRN_SPIFFS_BASE             "/spiffs"
 #define BRN_SPIFFS_CONFIG_DIR       BRN_SPIFFS_BASE "/config"
 #define BRN_SPIFFS_MEMORY_DIR       BRN_SPIFFS_BASE "/memory"
 #define BRN_SPIFFS_SESSION_DIR      BRN_SPIFFS_BASE "/sessions"
+#define BRN_SD_BASE                 "/sdcard"
+#define BRN_SD_MODE_DISABLED        0
+#define BRN_SD_MODE_SDMMC           1
+#define BRN_SD_MODE_SPI             2
+#define BRN_SD_MODE                 BRN_SD_MODE_SDMMC
+#define BRN_SD_PREFER_DATA          1
+#define BRN_SD_MAX_FILES            8
+#define BRN_SD_ALLOCATION_UNIT_SIZE (16 * 1024)
+#define BRN_SD_FORMAT_IF_MOUNT_FAILED 0
+#define BRN_SD_MAX_FREQ_KHZ         20000
+#define BRN_SDMMC_BUS_WIDTH         4
+#define BRN_SDMMC_PIN_CLK           14
+#define BRN_SDMMC_PIN_CMD           15
+#define BRN_SDMMC_PIN_D0            2
+#define BRN_SDMMC_PIN_D1            4
+#define BRN_SDMMC_PIN_D2            12
+#define BRN_SDMMC_PIN_D3            13
+#define BRN_SDMMC_PIN_CD            -1
+#define BRN_SDMMC_PIN_WP            -1
+#define BRN_SDSPI_PIN_MISO          6
+#define BRN_SDSPI_PIN_MOSI          4
+#define BRN_SDSPI_PIN_CLK           5
+#define BRN_SDSPI_PIN_CS            1
+#define BRN_SDSPI_PIN_CD            -1
+#define BRN_SDSPI_PIN_WP            -1
+#define BRN_SDSPI_MAX_TRANSFER      4096
 #define BRN_MEMORY_FILE             BRN_SPIFFS_MEMORY_DIR "/MEMORY.md"
 #define BRN_SOUL_FILE               BRN_SPIFFS_CONFIG_DIR "/SOUL.md"
 #define BRN_USER_FILE               BRN_SPIFFS_CONFIG_DIR "/USER.md"

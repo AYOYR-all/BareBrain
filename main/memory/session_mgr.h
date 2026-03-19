@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 /**
- * Initialize session manager.
+ * Initialize session manager. Session files are stored on SD when mounted.
  */
 esp_err_t session_mgr_init(void);
 

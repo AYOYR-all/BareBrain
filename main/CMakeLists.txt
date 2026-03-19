@@ -12,6 +12,8 @@ idf_component_register(
         "agent/context_builder.c"
         "memory/memory_store.c"
         "memory/session_mgr.c"
+        "storage/storage_manager.c"
+        "storage/storage_fs.c"
         "gateway/ws_server.c"
         "cli/serial_cli.c"
         "proxy/http_proxy.c"
@@ -30,6 +32,7 @@ idf_component_register(
         "."
     REQUIRES
         nvs_flash esp_wifi esp_netif esp_http_client esp_http_server
-        esp_https_ota esp_event json spiffs console vfs app_update esp-tls
-        esp_timer esp_websocket_client esp_driver_gpio
+        esp_https_ota esp_event json spiffs fatfs console vfs app_update esp-tls
+        esp_timer esp_websocket_client esp_driver_gpio esp_driver_spi
+        esp_driver_sdspi esp_driver_sdmmc sdmmc
 )

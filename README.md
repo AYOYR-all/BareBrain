@@ -20,7 +20,7 @@ BareBrain turns a tiny ESP32-S3 board into a personal AI assistant. Plug it into
 
 ## How It Works
 
-You send a message from ClawApp over the local WebSocket gateway, or from Feishu/Lark if that channel is configured. The ESP32-S3 picks it up over WiFi, feeds it into an agent loop — the LLM thinks, calls tools, reads memory — and sends the reply back. Supports both **Anthropic (Claude)** and **OpenAI (GPT)** as providers, switchable at runtime. Everything runs on a single $5 chip with all your data stored locally on flash.
+You send a message from ClawApp over the local WebSocket gateway, or from Feishu/Lark if that channel is configured. The ESP32-S3 picks it up over WiFi, feeds it into an agent loop — the LLM thinks, calls tools, reads memory — and sends the reply back. Supports both **Anthropic (Claude)** and **OpenAI (GPT)** as providers, switchable at runtime. Everything runs on a single $5 chip, with core fallback data kept on flash and growing data able to live on an SD card.
 
 ## Quick Start
 
@@ -152,7 +152,7 @@ idf.py -p PORT flash monitor
 >
 > </details>
 
-### CLI Commands (via UART/COM port)
+### CLI Commands (via serial console)
 
 Connect via serial to configure or debug. **Config commands** let you change settings without recompiling — just plug in a USB cable anywhere.
 
@@ -185,6 +185,7 @@ brn> wifi_status              # am I connected?
 brn> memory_read              # see what the bot remembers
 brn> memory_write "content"   # write to MEMORY.md
 brn> heap_info                # how much RAM is free?
+brn> storage_status           # show SPIFFS / SD mount status and active data path
 brn> session_list             # list all chat sessions
 brn> session_clear 12345      # wipe a conversation
 brn> heartbeat_trigger           # manually trigger a heartbeat check
@@ -192,16 +193,16 @@ brn> cron_start                  # start cron scheduler now
 brn> restart                     # reboot
 ```
 
-### USB (JTAG) vs UART: Which Port for What
+### USB (JTAG) vs UART: Which Port the Current Firmware Uses
 
 Most ESP32-S3 dev boards expose **two USB-C ports**:
 
 | Port | Use for |
 |------|---------|
-| **USB** (JTAG) | `idf.py flash`, JTAG debugging |
-| **COM** (UART) | **REPL CLI**, serial console |
+| **USB** (JTAG) | `idf.py flash`, log monitor, default CLI for current firmware |
+| **COM** (UART) | On-board USB-to-UART bridge, optional depending on later config |
 
-> **REPL requires the UART (COM) port.** The USB (JTAG) port does not support interactive REPL input.
+> This repo currently enables `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y`, so the `USB` (JTAG) port handles both flashing and interactive `brn>` commands.
 
 <details>
 <summary>Port details & recommended workflow</summary>
@@ -211,31 +212,27 @@ Most ESP32-S3 dev boards expose **two USB-C ports**:
 | **USB** | USB / JTAG | Native USB Serial/JTAG |
 | **COM** | UART / COM | External UART bridge (CP2102/CH340) |
 
-The ESP-IDF console/REPL is configured to use UART by default (`CONFIG_ESP_CONSOLE_UART_DEFAULT=y`).
+The current firmware uses USB Serial/JTAG for the console (`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y`).
 
 **If you have both ports connected simultaneously:**
 
-- USB (JTAG) handles flash/download and provides secondary serial output
-- UART (COM) provides the primary interactive console for the REPL
+- USB (JTAG) handles flashing, monitor output, and the default REPL
+- UART (COM) is usually just a backup serial path
 - macOS: both appear as `/dev/cu.usbmodem*` or `/dev/cu.usbserial-*` — run `ls /dev/cu.usb*` to identify
 - Linux: USB (JTAG) → `/dev/ttyACM0`, UART → `/dev/ttyUSB0`
 
 **Recommended workflow:**
 
 ```bash
-# Flash via USB (JTAG) port
-idf.py -p /dev/cu.usbmodem11401 flash
-
-# Open REPL via UART (COM) port
-idf.py -p /dev/cu.usbserial-110 monitor
-# or use any serial terminal: screen, minicom, PuTTY at 115200 baud
+# Flash and enter monitor / CLI via the USB (JTAG) port
+idf.py -p /dev/cu.usbmodem11401 flash monitor
 ```
 
 </details>
 
 ## Memory
 
-BareBrain stores everything as plain text files you can read and edit:
+BareBrain stores its core state and long-lived data as plain text files you can read and edit:
 
 | File | What it is |
 |------|------------|
@@ -246,6 +243,56 @@ BareBrain stores everything as plain text files you can read and edit:
 | `cron.json` | Scheduled jobs — recurring or one-shot tasks created by the AI |
 | `2026-02-05.md` | Daily notes — what happened today |
 | `tg_12345.jsonl` | Chat history — your conversation with the bot |
+
+By default:
+
+- `/spiffs` keeps the core fallback files: `config/`, `skills/`, `cron.json`, and `HEARTBEAT.md`
+- `/sdcard` prefers the growing data when mounted: `memory/`, `sessions/`, and `docs/`
+- If no SD card is inserted, or mount fails, BareBrain keeps working and falls back to SPIFFS
+
+For example:
+
+- `MEMORY.md` prefers `/sdcard/memory/MEMORY.md` when SD is mounted
+- chat history prefers `/sdcard/sessions/<chat_id>.jsonl`
+- `cron.json` and `HEARTBEAT.md` remain on `/spiffs`
+
+## SD Card Storage
+
+The current firmware enables `SDMMC / SDIO 4-bit` mode by default. You do not need to type a mount command manually. On boot, the device mounts `/spiffs` first and then tries to mount `/sdcard`. If SD mount succeeds, memory, sessions, and docs prefer the SD card. If it fails, the firmware logs the error clearly and keeps using SPIFFS.
+
+For the dual-mode TF module shown in the wiring photo, use this mapping with the current default firmware:
+
+| Module label | ESP32-S3 GPIO |
+|------|------|
+| `D02` | `GPIO12` |
+| `D01` | `GPIO4` |
+| `MOSI / CMD` | `GPIO15` |
+| `MISO / D00` | `GPIO2` |
+| `CLK` | `GPIO14` |
+| `CS / D03` | `GPIO13` |
+| `GND` | `GND` |
+| `VCC` | `3.3V` |
+
+Wiring notes:
+
+- `VCC` must go to `3.3V`, not `5V`
+- With the default firmware, interpret the silk labels in `SDIO` mode, not `SPI` mode
+- `CS / D03` is required because in `SDIO 4-bit` mode it is `D3`
+- If you later want `SPI` mode instead, change `BRN_SD_MODE` in `main/brn_config.h`
+
+After wiring and powering on, verify mount status from the serial CLI:
+
+```text
+brn> storage_status
+```
+
+Focus on these fields:
+
+- `SD enabled: yes`
+- `SD mounted: yes`
+- `Data base: /sdcard`
+
+If you see `SD mounted: no`, the device still runs normally, but growing data stays on SPIFFS.
 
 ## Tools
 
@@ -265,17 +312,18 @@ To enable web search, set a [Tavily API key](https://app.tavily.com/home) via `B
 
 BareBrain has a built-in cron scheduler that lets the AI schedule its own tasks. The LLM can create recurring jobs ("every N seconds") or one-shot jobs ("at unix timestamp") via the `cron_add` tool. When a job fires, its message is injected into the agent loop — so the AI wakes up, processes the task, and responds.
 
-Jobs are persisted to SPIFFS (`cron.json`) and survive reboots. Example use cases: daily summaries, periodic reminders, scheduled check-ins.
+Jobs are persisted to SPIFFS (`/spiffs/cron.json`) and survive reboots. Example use cases: daily summaries, periodic reminders, scheduled check-ins.
 
 ## Heartbeat
 
-The heartbeat service periodically reads `HEARTBEAT.md` from SPIFFS and checks for actionable tasks. If uncompleted items are found (anything that isn't an empty line, a header, or a checked `- [x]` box), it sends a prompt to the agent loop so the AI can act on them autonomously.
+The heartbeat service periodically reads `HEARTBEAT.md` from SPIFFS (`/spiffs/HEARTBEAT.md`) and checks for actionable tasks. If uncompleted items are found (anything that isn't an empty line, a header, or a checked `- [x]` box), it sends a prompt to the agent loop so the AI can act on them autonomously.
 
 This turns BareBrain into a proactive assistant — write tasks to `HEARTBEAT.md` and the bot will pick them up on the next heartbeat cycle (default: every 30 minutes).
 
 ## Also Included
 
 - **WebSocket gateway** on port 18789 — connect from your LAN with any WebSocket client
+- **SD card storage** — tries to mount on boot; memory, sessions, and docs prefer `/sdcard` when available
 - **Optional relay client** — keep an outbound WebSocket connection to a public relay server
 - **OTA updates** — flash new firmware over WiFi, no USB needed
 - **Dual-core** — network I/O and AI processing run on separate CPU cores

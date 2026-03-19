@@ -36,10 +36,11 @@ Feishu / Lark User
 │                        Feishu   WebSocket         │
 │                                                  │
 │   ┌──────────────────────────────────────────┐    │
-│   │ SPIFFS                                   │    │
+│   │ SPIFFS + SD Card                         │    │
 │   │ /spiffs/config   SOUL.md, USER.md        │    │
-│   │ /spiffs/memory   MEMORY.md, daily notes  │    │
-│   │ /spiffs/sessions session history JSONL   │    │
+│   │ /spiffs/cron.json, HEARTBEAT.md, skills  │    │
+│   │ /sdcard/memory  MEMORY.md, daily notes   │    │
+│   │ /sdcard/sessions session history JSONL   │    │
 │   └──────────────────────────────────────────┘    │
 └───────────────────────────────────────────────────┘
 ```
@@ -62,6 +63,7 @@ main/
 ├── agent/                    context building + ReAct loop
 ├── llm/                      Anthropic/OpenAI-compatible provider config
 ├── memory/                   MEMORY.md and session history
+├── storage/                  SPIFFS/SD mount and path routing
 ├── gateway/                  local WebSocket gateway
 ├── cli/                      serial REPL for config and debugging
 ├── cron/                     scheduled message triggers
@@ -77,6 +79,7 @@ main/
   - serial CLI (`set_feishu_creds`, `set_api_key`, `set_model`, `set_proxy`, ...)
   - onboarding/admin portal at `http://192.168.4.1`
 - Feishu credentials are stored under the `feishu_config` NVS namespace.
+- Default SD interface is `SDMMC / SDIO 4-bit`; pins are configured in `main/brn_config.h`.
 
 ## Task Layout
 
@@ -89,15 +92,25 @@ main/
 
 ## Storage Layout
 
-SPIFFS stores configuration-adjacent text files and conversation state:
+BareBrain uses hybrid local storage:
 
 - `/spiffs/config/SOUL.md`
 - `/spiffs/config/USER.md`
-- `/spiffs/memory/MEMORY.md`
-- `/spiffs/memory/daily/<YYYY-MM-DD>.md`
-- `/spiffs/sessions/<chat_id>.jsonl`
+- `/spiffs/skills/*.md`
 - `/spiffs/cron.json`
 - `/spiffs/HEARTBEAT.md`
+- `/sdcard/memory/MEMORY.md`
+- `/sdcard/memory/<YYYY-MM-DD>.md`
+- `/sdcard/sessions/<chat_id>.jsonl`
+- `/sdcard/docs/*`
+
+Runtime behavior:
+
+- Boot mounts SPIFFS first because it is the core fallback storage.
+- Boot then attempts to mount `/sdcard`.
+- When SD mount succeeds, memory, sessions, and docs prefer the SD card.
+- When SD mount fails or no card is inserted, those paths fall back to SPIFFS so the main system still boots and chats normally.
+- Existing `memory/`, `sessions/`, and `docs/` files in SPIFFS are copied to SD on first successful mount when the destination file is missing.
 
 ## External Services
 

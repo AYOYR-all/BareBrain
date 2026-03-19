@@ -2,6 +2,7 @@
 #include "brn_config.h"
 #include "memory/memory_store.h"
 #include "skills/skill_loader.h"
+#include "storage/storage_manager.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -28,6 +29,11 @@ static size_t append_file(char *buf, size_t size, size_t offset, const char *pat
 esp_err_t context_build_system_prompt(char *buf, size_t size)
 {
     size_t off = 0;
+    char memory_file[96];
+    char daily_pattern[112];
+
+    snprintf(memory_file, sizeof(memory_file), "%s/memory/MEMORY.md", storage_get_data_base());
+    snprintf(daily_pattern, sizeof(daily_pattern), "%s/memory/<YYYY-MM-DD>.md", storage_get_data_base());
 
     off += snprintf(buf + off, size - off,
         "# BRN\n\n"
@@ -44,10 +50,10 @@ esp_err_t context_build_system_prompt(char *buf, size_t size)
         "你可以使用以下工具：\n"
         "- web_search：搜索当前信息（优先 Tavily，已配置时可回退到 Brave）。当你需要最新事实、新闻、天气或训练数据之外的信息时使用它。\n"
         "- get_current_time：获取当前日期和时间。你没有内置时钟，凡是需要知道时间或日期都必须调用它。\n"
-        "- read_file：读取文件（路径必须以 " BRN_SPIFFS_BASE "/ 开头）。\n"
+        "- read_file：读取本地文件（路径必须以 " BRN_SPIFFS_BASE "/ 或 " BRN_SD_BASE "/ 开头）。\n"
         "- write_file：写入或覆盖文件。\n"
         "- edit_file：对文件执行查找替换。\n"
-        "- list_dir：列出文件，可按前缀过滤。\n"
+        "- list_dir：列出本地文件，可按前缀过滤。\n"
         "- cron_add：创建循环或一次性定时任务；任务触发时会推动一次 agent 执行。\n"
         "- cron_list：列出所有定时任务。\n"
         "- cron_remove：按 ID 删除定时任务。\n"
@@ -59,9 +65,9 @@ esp_err_t context_build_system_prompt(char *buf, size_t size)
         "引脚范围受策略限制，只能访问允许的引脚。遇到数字输入输出相关问题时，应优先使用这些工具确认实际状态。\n\n"
         "需要时主动使用工具，并在完成后用文本给出最终答复。\n\n"
         "## 记忆\n"
-        "你有持久化记忆存储在本地 Flash 中：\n"
-        "- 长期记忆：" BRN_SPIFFS_MEMORY_DIR "/MEMORY.md\n"
-        "- 每日记录：" BRN_SPIFFS_MEMORY_DIR "/daily/<YYYY-MM-DD>.md\n\n"
+        "你有持久化记忆存储在本地存储中（SD 挂载成功时优先使用 SD）：\n"
+        "- 长期记忆：%s\n"
+        "- 每日记录：%s\n\n"
         "重要要求：主动使用记忆来跨对话记住信息。\n"
         "- 当你了解到主人的新信息（称呼、偏好、习惯、背景等）时，要写入 MEMORY.md。\n"
         "- 当对话里发生值得记录的事情时，追加到当天的每日记录。\n"
@@ -72,7 +78,8 @@ esp_err_t context_build_system_prompt(char *buf, size_t size)
         "## 技能\n"
         "技能文件存放在 " BRN_SKILLS_PREFIX " 中。\n"
         "当任务匹配某个技能时，先读取完整技能文件再执行。\n"
-        "你也可以使用 write_file 在 " BRN_SKILLS_PREFIX "<name>.md 创建新技能。\n");
+        "你也可以使用 write_file 在 " BRN_SKILLS_PREFIX "<name>.md 创建新技能。\n",
+        memory_file, daily_pattern);
 
     /* Bootstrap files */
     off = append_file(buf, size, off, BRN_SOUL_FILE, "人格设定");

@@ -1,5 +1,7 @@
 #include "memory_store.h"
 #include "brn_config.h"
+#include "storage/storage_fs.h"
+#include "storage/storage_manager.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -8,6 +10,16 @@
 #include "esp_log.h"
 
 static const char *TAG = "memory";
+
+static void memory_file_path(char *buf, size_t size)
+{
+    snprintf(buf, size, "%s/memory/MEMORY.md", storage_get_data_base());
+}
+
+static void memory_daily_path(char *buf, size_t size, const char *date_str)
+{
+    snprintf(buf, size, "%s/memory/%s.md", storage_get_data_base(), date_str);
+}
 
 static void get_date_str(char *buf, size_t size, int days_ago)
 {
@@ -21,15 +33,16 @@ static void get_date_str(char *buf, size_t size, int days_ago)
 
 esp_err_t memory_store_init(void)
 {
-    /* SPIFFS is flat — no real directory creation needed.
-       Just verify we can open the base path. */
-    ESP_LOGI(TAG, "Memory store initialized at %s", BRN_SPIFFS_BASE);
+    ESP_LOGI(TAG, "Memory store initialized at %s/memory", storage_get_data_base());
     return ESP_OK;
 }
 
 esp_err_t memory_read_long_term(char *buf, size_t size)
 {
-    FILE *f = fopen(BRN_MEMORY_FILE, "r");
+    char path[96];
+    memory_file_path(path, sizeof(path));
+
+    FILE *f = fopen(path, "r");
     if (!f) {
         buf[0] = '\0';
         return ESP_ERR_NOT_FOUND;
@@ -43,9 +56,17 @@ esp_err_t memory_read_long_term(char *buf, size_t size)
 
 esp_err_t memory_write_long_term(const char *content)
 {
-    FILE *f = fopen(BRN_MEMORY_FILE, "w");
+    char path[96];
+    memory_file_path(path, sizeof(path));
+
+    if (storage_fs_ensure_parent_dir(path) != ESP_OK) {
+        ESP_LOGE(TAG, "Cannot prepare parent dir for %s", path);
+        return ESP_FAIL;
+    }
+
+    FILE *f = fopen(path, "w");
     if (!f) {
-        ESP_LOGE(TAG, "Cannot write %s", BRN_MEMORY_FILE);
+        ESP_LOGE(TAG, "Cannot write %s", path);
         return ESP_FAIL;
     }
     fputs(content, f);
@@ -59,8 +80,13 @@ esp_err_t memory_append_today(const char *note)
     char date_str[16];
     get_date_str(date_str, sizeof(date_str), 0);
 
-    char path[64];
-    snprintf(path, sizeof(path), "%s/%s.md", BRN_SPIFFS_MEMORY_DIR, date_str);
+    char path[96];
+    memory_daily_path(path, sizeof(path), date_str);
+
+    if (storage_fs_ensure_parent_dir(path) != ESP_OK) {
+        ESP_LOGE(TAG, "Cannot prepare parent dir for %s", path);
+        return ESP_FAIL;
+    }
 
     FILE *f = fopen(path, "a");
     if (!f) {
@@ -87,8 +113,8 @@ esp_err_t memory_read_recent(char *buf, size_t size, int days)
         char date_str[16];
         get_date_str(date_str, sizeof(date_str), i);
 
-        char path[64];
-        snprintf(path, sizeof(path), "%s/%s.md", BRN_SPIFFS_MEMORY_DIR, date_str);
+        char path[96];
+        memory_daily_path(path, sizeof(path), date_str);
 
         FILE *f = fopen(path, "r");
         if (!f) continue;
