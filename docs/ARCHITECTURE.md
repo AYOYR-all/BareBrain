@@ -39,7 +39,7 @@ Feishu / Lark User
 │   │ SPIFFS + SD Card                         │    │
 │   │ /spiffs/config   SOUL.md, USER.md        │    │
 │   │ /spiffs/cron.json, HEARTBEAT.md, skills  │    │
-│   │ /sdcard/memory  MEMORY.md, daily notes   │    │
+│   │ /sdcard/memory  index, nodes, inbox      │    │
 │   │ /sdcard/sessions session history JSONL   │    │
 │   └──────────────────────────────────────────┘    │
 └───────────────────────────────────────────────────┘
@@ -62,7 +62,7 @@ main/
 ├── channels/feishu/          Feishu bot init, WS receive, REST send
 ├── agent/                    context building + ReAct loop
 ├── llm/                      Anthropic/OpenAI-compatible provider config
-├── memory/                   MEMORY.md and session history
+├── memory/                   indexed memory graph + session history
 ├── storage/                  SPIFFS/SD mount and path routing
 ├── gateway/                  local WebSocket gateway
 ├── cli/                      serial REPL for config and debugging
@@ -99,8 +99,11 @@ BareBrain uses hybrid local storage:
 - `/spiffs/skills/*.md`
 - `/spiffs/cron.json`
 - `/spiffs/HEARTBEAT.md`
-- `/sdcard/memory/MEMORY.md`
-- `/sdcard/memory/<YYYY-MM-DD>.md`
+- `/sdcard/memory/index.json`
+- `/sdcard/memory/nodes/<id>.md`
+- `/sdcard/memory/meta/<id>.json`
+- `/sdcard/memory/inbox/<id>.json`
+- `/sdcard/memory/failed/<id>.json`
 - `/sdcard/sessions/<chat_id>.jsonl`
 - `/sdcard/docs/*`
 
@@ -108,9 +111,9 @@ Runtime behavior:
 
 - Boot mounts SPIFFS first because it is the core fallback storage.
 - Boot then attempts to mount `/sdcard`.
-- When SD mount succeeds, memory, sessions, and docs prefer the SD card.
-- When SD mount fails or no card is inserted, those paths fall back to SPIFFS so the main system still boots and chats normally.
-- Existing `memory/`, `sessions/`, and `docs/` files in SPIFFS are copied to SD on first successful mount when the destination file is missing.
+- When SD mount succeeds, indexed memory, sessions, and docs use the SD card.
+- When SD mount fails, the main system still boots, but indexed memory remains unavailable until the SD card is mounted.
+- Existing `sessions/` and `docs/` files in SPIFFS are copied to SD on first successful mount when the destination file is missing.
 
 ## External Services
 

@@ -168,6 +168,10 @@ brn> set_api_key sk-ant-api03-... # change API key (Anthropic or OpenAI)
 brn> set_model_provider openai    # switch provider (anthropic|openai)
 brn> set_model gpt-4o             # change LLM model
 brn> set_base_url https://openrouter.ai/api/v1  # optional: OpenAI-compatible API root
+brn> set_memory_api_key sk-...    # optional: cheaper model just for memory indexing
+brn> set_memory_provider openai   # memory indexing provider
+brn> set_memory_model gpt-4.1-mini  # memory indexing model
+brn> set_memory_base_url https://openrouter.ai/api/v1  # optional memory API root
 brn> set_proxy 127.0.0.1 7897  # set HTTP proxy
 brn> clear_proxy                  # remove proxy
 brn> set_search_key BSA...        # set Brave Search API key
@@ -182,8 +186,8 @@ Leave `BRN_SECRET_BASE_URL` empty to use the official provider endpoint. To use 
 
 ```
 brn> wifi_status              # am I connected?
-brn> memory_read              # see what the bot remembers
-brn> memory_write "content"   # write to MEMORY.md
+brn> tool_exec memory_search "{\"query\":\"project\"}"   # search indexed memory
+brn> tool_exec memory_reindex_status                    # inspect the async queue
 brn> heap_info                # how much RAM is free?
 brn> storage_status           # show SPIFFS / SD mount status and active data path
 brn> session_list             # list all chat sessions
@@ -232,33 +236,30 @@ idf.py -p /dev/cu.usbmodem11401 flash monitor
 
 ## Memory
 
-BareBrain stores its core state and long-lived data as plain text files you can read and edit:
+BareBrain now uses an indexed memory system instead of a single `MEMORY.md` file.
 
-| File | What it is |
+| Path | What it is |
 |------|------------|
-| `SOUL.md` | The bot's personality — edit this to change how it behaves |
-| `USER.md` | Info about you — name, preferences, language |
-| `MEMORY.md` | Long-term memory — things the bot should always remember |
-| `HEARTBEAT.md` | Task list the bot checks periodically and acts on autonomously |
-| `cron.json` | Scheduled jobs — recurring or one-shot tasks created by the AI |
-| `2026-02-05.md` | Daily notes — what happened today |
-| `tg_12345.jsonl` | Chat history — your conversation with the bot |
+| `/spiffs/config/SOUL.md` | The bot's personality |
+| `/spiffs/config/USER.md` | Stable user bootstrap info |
+| `/spiffs/HEARTBEAT.md` | Task list the bot checks periodically |
+| `/spiffs/cron.json` | Scheduled jobs |
+| `/sdcard/memory/index.json` | Top-level memory directory loaded into context |
+| `/sdcard/memory/nodes/<id>.md` | Full memory node detail text |
+| `/sdcard/memory/meta/<id>.json` | Tags, links, source, and indexing metadata |
+| `/sdcard/memory/inbox/<id>.json` | Raw memory notes waiting for async indexing |
+| `/sdcard/memory/failed/<id>.json` | Indexing jobs that failed explicitly |
+| `/sdcard/sessions/<chat_id>.jsonl` | Chat history |
 
-By default:
+Runtime behavior:
 
 - `/spiffs` keeps the core fallback files: `config/`, `skills/`, `cron.json`, and `HEARTBEAT.md`
-- `/sdcard` prefers the growing data when mounted: `memory/`, `sessions/`, and `docs/`
-- If no SD card is inserted, or mount fails, BareBrain keeps working and falls back to SPIFFS
-
-For example:
-
-- `MEMORY.md` prefers `/sdcard/memory/MEMORY.md` when SD is mounted
-- chat history prefers `/sdcard/sessions/<chat_id>.jsonl`
-- `cron.json` and `HEARTBEAT.md` remain on `/spiffs`
+- Indexed memory lives only on `/sdcard/memory/`
+- If the SD card is missing or mount fails, BareBrain still boots and chats, but indexed memory is unavailable until SD storage is mounted
 
 ## SD Card Storage
 
-The current firmware supports only `SDMMC / SDIO 4-bit`. You do not need to type a mount command manually. On boot, the device mounts `/spiffs` first and then tries to mount `/sdcard`. If SD mount succeeds, memory, sessions, and docs prefer the SD card. If it fails, the firmware logs the error clearly and keeps using SPIFFS.
+The current firmware supports only `SDMMC / SDIO 4-bit`. You do not need to type a mount command manually. On boot, the device mounts `/spiffs` first and then tries to mount `/sdcard`. If SD mount succeeds, indexed memory, sessions, and docs use the SD card. If it fails, the firmware logs the error clearly, sessions and docs keep their existing behavior, and indexed memory remains unavailable.
 
 For the current `SDMMC / SDIO 4-bit` firmware, wire the TF module like this:
 
@@ -291,7 +292,7 @@ Focus on these fields:
 - `SD mounted: yes`
 - `Data base: /sdcard`
 
-If you see `SD mounted: no`, the device still runs normally, but growing data stays on SPIFFS.
+If you see `SD mounted: no`, the device still runs normally, but indexed memory will not load or update until the SD card mounts successfully.
 
 ## Tools
 
@@ -301,6 +302,11 @@ BareBrain supports tool calling for both Anthropic and OpenAI — the LLM can ca
 |------|-------------|
 | `web_search` | Search the web via Tavily (preferred) or Brave for current information |
 | `get_current_time` | Fetch current date/time via HTTP and set the system clock |
+| `memory_search` | Search indexed memory summaries before reading details |
+| `memory_read_node` | Read one indexed memory node in full |
+| `memory_expand_links` | Follow related memory links from one node |
+| `memory_upsert_note` | Queue a memory note for async indexing |
+| `memory_reindex_status` | Inspect the async indexing queue and memory-model status |
 | `cron_add` | Schedule a recurring or one-shot task (the LLM creates cron jobs on its own) |
 | `cron_list` | List all scheduled cron jobs |
 | `cron_remove` | Remove a cron job by ID |
@@ -322,7 +328,7 @@ This turns BareBrain into a proactive assistant — write tasks to `HEARTBEAT.md
 ## Also Included
 
 - **WebSocket gateway** on port 18789 — connect from your LAN with any WebSocket client
-- **SD card storage** — tries to mount on boot; memory, sessions, and docs prefer `/sdcard` when available
+- **SD card storage** — tries to mount on boot; indexed memory lives on `/sdcard`, and sessions/docs keep using it when available
 - **Optional relay client** — keep an outbound WebSocket connection to a public relay server
 - **OTA updates** — flash new firmware over WiFi, no USB needed
 - **Dual-core** — network I/O and AI processing run on separate CPU cores

@@ -76,7 +76,7 @@ static void refresh_status_counts(void)
     }
     brn_memory_index_stats_t stats = {0};
     memory_index_get_stats(&stats);
-    s_status.indexed_count = stats.persisted_nodes;
+    s_status.indexed_count = stats.total_nodes;
     brn_memory_model_status_t model = {0};
     memory_model_get_status(&model);
     copy_text(s_status.active_provider, sizeof(s_status.active_provider), model.provider);

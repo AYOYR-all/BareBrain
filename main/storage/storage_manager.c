@@ -154,7 +154,6 @@ static void migrate_prefix(const char *prefix)
 static void migrate_data_to_sd(void)
 {
     static const char *prefixes[] = {
-        "memory/",
         "sessions/",
         "docs/",
     };

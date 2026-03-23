@@ -13,8 +13,6 @@
 #include "freertos/semphr.h"
 
 static const char *TAG = "memory_index";
-static const char *LEGACY_PROFILE_ID = "legacy_profile";
-static const char *LEGACY_RECENT_ID = "legacy_recent";
 
 static SemaphoreHandle_t s_lock = NULL;
 static brn_memory_node_t s_nodes[BRN_MEMORY_MAX_NODES];
@@ -45,37 +43,6 @@ static bool contains_nocase(const char *text, const char *needle)
         if (i == nlen) return true;
     }
     return false;
-}
-
-static void summarize_text(const char *src, char *dst, size_t size)
-{
-    size_t off = 0;
-    bool space = false;
-    if (!src || !dst || size == 0) return;
-    dst[0] = '\0';
-    for (size_t i = 0; src[i] && off < size - 1; ++i) {
-        char ch = src[i];
-        if (ch == '#' && off == 0) continue;
-        if (ch == '\r' || ch == '\n' || ch == '\t') ch = ' ';
-        if (ch == ' ') {
-            if (space || off == 0) continue;
-            space = true;
-        } else {
-            space = false;
-        }
-        dst[off++] = ch;
-    }
-    while (off > 0 && dst[off - 1] == ' ') off--;
-    dst[off] = '\0';
-}
-
-static int count_persisted_nodes(void)
-{
-    int count = 0;
-    for (int i = 0; i < s_node_count; ++i) {
-        if (!s_nodes[i].virtual_only) count++;
-    }
-    return count;
 }
 
 static brn_memory_node_t *find_node(const char *node_id)
@@ -207,7 +174,6 @@ static esp_err_t save_index_file(void)
         return ESP_ERR_NO_MEM;
     }
     for (int i = 0; i < s_node_count; ++i) {
-        if (s_nodes[i].virtual_only) continue;
         cJSON *obj = node_to_json(&s_nodes[i]);
         if (obj) cJSON_AddItemToArray(nodes, obj);
     }
@@ -226,38 +192,6 @@ static esp_err_t save_index_file(void)
     remove(path);
     if (rename(tmp_path, path) != 0) return ESP_FAIL;
     return ESP_OK;
-}
-
-static void add_virtual_node(const char *id,
-                             const char *kind,
-                             const char *title,
-                             const char *summary,
-                             int score_hint)
-{
-    if (s_node_count >= BRN_MEMORY_MAX_NODES || find_node(id)) return;
-    brn_memory_node_t *node = &s_nodes[s_node_count++];
-    memset(node, 0, sizeof(*node));
-    copy_text(node->id, sizeof(node->id), id);
-    copy_text(node->kind, sizeof(node->kind), kind);
-    copy_text(node->title, sizeof(node->title), title);
-    copy_text(node->summary, sizeof(node->summary), summary);
-    node->score_hint = score_hint;
-    node->updated_at = time(NULL);
-    node->virtual_only = true;
-}
-
-static void add_legacy_nodes(void)
-{
-    char buf[1024];
-    char summary[BRN_MEMORY_SUMMARY_LEN];
-    if (memory_read_long_term(buf, sizeof(buf)) == ESP_OK && buf[0]) {
-        summarize_text(buf, summary, sizeof(summary));
-        add_virtual_node(LEGACY_PROFILE_ID, "profile", "Legacy MEMORY.md", summary, 120);
-    }
-    if (memory_read_recent(buf, sizeof(buf), 3) == ESP_OK && buf[0]) {
-        summarize_text(buf, summary, sizeof(summary));
-        add_virtual_node(LEGACY_RECENT_ID, "session", "Recent daily notes", summary, 90);
-    }
 }
 
 static int node_score(const brn_memory_node_t *node, const char *query, const char *kind, const char *tag)
@@ -321,9 +255,8 @@ esp_err_t memory_index_init(void)
     xSemaphoreTake(s_lock, portMAX_DELAY);
     s_node_count = 0;
     esp_err_t err = load_index_file();
-    add_legacy_nodes();
     xSemaphoreGive(s_lock);
-    ESP_LOGI(TAG, "Memory index ready (%d persisted, %d total)", count_persisted_nodes(), s_node_count);
+    ESP_LOGI(TAG, "Memory index ready (%d nodes)", s_node_count);
     return err;
 }
 
@@ -337,6 +270,9 @@ size_t memory_index_build_prompt_digest(char *buf, size_t size, int limit)
     xSemaphoreTake(s_lock, portMAX_DELAY);
     int count = collect_sorted(indices, NULL, NULL, NULL);
     off += snprintf(buf + off, size - off, "Memory Directory:\n");
+    if (count == 0) {
+        off += snprintf(buf + off, size - off, "- (empty)\n");
+    }
     for (int i = 0; i < count && i < limit && off < size - 1; ++i) {
         off = append_node_line(buf, size, off, &s_nodes[indices[i]]);
     }
@@ -389,8 +325,6 @@ esp_err_t memory_index_read_node(const char *node_id, char *output, size_t outpu
 {
     char path[BRN_MEMORY_PATH_LEN];
     if (!node_id || !output || output_size == 0) return ESP_ERR_INVALID_ARG;
-    if (strcmp(node_id, LEGACY_PROFILE_ID) == 0) return memory_read_long_term(output, output_size);
-    if (strcmp(node_id, LEGACY_RECENT_ID) == 0) return memory_read_recent(output, output_size, 3);
     xSemaphoreTake(s_lock, portMAX_DELAY);
     brn_memory_node_t *node = find_node(node_id);
     copy_text(path, sizeof(path), node ? node->detail_path : NULL);
@@ -451,7 +385,6 @@ esp_err_t memory_index_upsert(const brn_memory_node_t *node)
         return ESP_ERR_NO_MEM;
     }
     *slot = *node;
-    slot->virtual_only = false;
     esp_err_t err = save_index_file();
     xSemaphoreGive(s_lock);
     return err;
@@ -462,6 +395,5 @@ void memory_index_get_stats(brn_memory_index_stats_t *stats)
     if (!stats) return;
     xSemaphoreTake(s_lock, portMAX_DELAY);
     stats->total_nodes = s_node_count;
-    stats->persisted_nodes = count_persisted_nodes();
     xSemaphoreGive(s_lock);
 }

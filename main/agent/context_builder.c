@@ -1,9 +1,7 @@
 #include "context_builder.h"
 #include "brn_config.h"
 #include "memory/memory_index.h"
-#include "memory/memory_store.h"
 #include "skills/skill_loader.h"
-#include "storage/storage_manager.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -30,11 +28,6 @@ static size_t append_file(char *buf, size_t size, size_t offset, const char *pat
 esp_err_t context_build_system_prompt(char *buf, size_t size)
 {
     size_t off = 0;
-    char memory_file[96];
-    char daily_pattern[112];
-
-    snprintf(memory_file, sizeof(memory_file), "%s/memory/MEMORY.md", storage_get_data_base());
-    snprintf(daily_pattern, sizeof(daily_pattern), "%s/memory/<YYYY-MM-DD>.md", storage_get_data_base());
 
     off += snprintf(buf + off, size - off,
         "# BRN\n\n"
@@ -71,22 +64,20 @@ esp_err_t context_build_system_prompt(char *buf, size_t size)
         " Pin access is limited by policy, so only allowed pins may be used. For digital input or output issues, prefer these tools to confirm the real hardware state first.\n\n"
         "Use tools proactively when needed, and provide the final answer in text after the work is done.\n\n"
         "## Memory\n"
-        "Persistent memory is stored locally (prefer SD when mounted successfully):\n"
-        "- Legacy long-term file: %s\n"
-        "- Legacy daily notes: %s\n"
-        "- Indexed memory directory: top-level summaries are exposed below; details must be fetched on demand.\n\n"
+        "Persistent memory lives in the indexed memory directory on the SD card.\n"
+        "Only top-level summaries are exposed below; details must be fetched on demand.\n\n"
         "Important memory rules:\n"
         "- The memory directory only exposes top-level summaries. A summary does not mean you have already read the full detail.\n"
         "- Before relying on a node for specific facts, call memory_read_node.\n"
         "- Use memory_search first when you need to find relevant stored knowledge.\n"
         "- Use memory_expand_links when one node suggests nearby related knowledge.\n"
         "- When you learn stable long-term information about Master, important project context, or durable preferences, use memory_upsert_note proactively.\n"
-        "- Do not dump raw conversation logs into memory. Store compact, useful summaries.\n\n"
+        "- Do not dump raw conversation logs into memory. Store compact, useful summaries.\n"
+        "- If the directory is still empty, keep working normally and use memory_upsert_note to start building it.\n\n"
         "## Skills\n"
         "Skill files are stored in " BRN_SKILLS_PREFIX ".\n"
         "When a task matches a skill, read the full skill file before executing it.\n"
-        "You can also use write_file to create a new skill at " BRN_SKILLS_PREFIX "<name>.md.\n",
-        memory_file, daily_pattern);
+        "You can also use write_file to create a new skill at " BRN_SKILLS_PREFIX "<name>.md.\n");
 
     /* Bootstrap files */
     off = append_file(buf, size, off, BRN_SOUL_FILE, "Persona");
@@ -97,11 +88,6 @@ esp_err_t context_build_system_prompt(char *buf, size_t size)
                                                          BRN_MEMORY_PROMPT_LIMIT);
     if (digest_len > 0) {
         off += snprintf(buf + off, size - off, "\n## Memory Directory\n\n%s\n", digest_buf);
-    } else {
-        char mem_buf[4096];
-        if (memory_read_long_term(mem_buf, sizeof(mem_buf)) == ESP_OK && mem_buf[0]) {
-            off += snprintf(buf + off, size - off, "\n## Long-Term Memory\n\n%s\n", mem_buf);
-        }
     }
 
     /* Skills */

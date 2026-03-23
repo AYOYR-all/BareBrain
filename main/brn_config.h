@@ -138,7 +138,6 @@
 /* Storage */
 #define BRN_SPIFFS_BASE             "/spiffs"
 #define BRN_SPIFFS_CONFIG_DIR       BRN_SPIFFS_BASE "/config"
-#define BRN_SPIFFS_MEMORY_DIR       BRN_SPIFFS_BASE "/memory"
 #define BRN_SPIFFS_SESSION_DIR      BRN_SPIFFS_BASE "/sessions"
 #define BRN_SD_BASE                 "/sdcard"
 #define BRN_SD_MODE_DISABLED        0
@@ -159,7 +158,6 @@
 #define BRN_SDMMC_PIN_D3            13
 #define BRN_SDMMC_PIN_CD            -1
 #define BRN_SDMMC_PIN_WP            -1
-#define BRN_MEMORY_FILE             BRN_SPIFFS_MEMORY_DIR "/MEMORY.md"
 #define BRN_SOUL_FILE               BRN_SPIFFS_CONFIG_DIR "/SOUL.md"
 #define BRN_USER_FILE               BRN_SPIFFS_CONFIG_DIR "/USER.md"
 #define BRN_CONTEXT_BUF_SIZE        (16 * 1024)

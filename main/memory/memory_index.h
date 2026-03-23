@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <time.h>
 
@@ -19,12 +18,10 @@ typedef struct {
     int link_count;
     int score_hint;
     time_t updated_at;
-    bool virtual_only;
 } brn_memory_node_t;
 
 typedef struct {
     int total_nodes;
-    int persisted_nodes;
 } brn_memory_index_stats_t;
 
 esp_err_t memory_index_init(void);

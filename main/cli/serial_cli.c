@@ -5,7 +5,6 @@
 #include "channels/relay/relay_client.h"
 #include "llm/llm_proxy.h"
 #include "memory/memory_model.h"
-#include "memory/memory_store.h"
 #include "memory/memory_worker.h"
 #include "memory/session_mgr.h"
 #include "proxy/http_proxy.h"
@@ -248,41 +247,6 @@ static int cmd_set_memory_base_url(int argc, char **argv)
         return 1;
     }
     printf("Memory base URL set.\n");
-    return 0;
-}
-
-/* --- memory_read command --- */
-static int cmd_memory_read(int argc, char **argv)
-{
-    char *buf = malloc(4096);
-    if (!buf) {
-        printf("Out of memory.\n");
-        return 1;
-    }
-    if (memory_read_long_term(buf, 4096) == ESP_OK && buf[0]) {
-        printf("=== MEMORY.md ===\n%s\n=================\n", buf);
-    } else {
-        printf("MEMORY.md is empty or not found.\n");
-    }
-    free(buf);
-    return 0;
-}
-
-/* --- memory_write command --- */
-static struct {
-    struct arg_str *content;
-    struct arg_end *end;
-} memory_write_args;
-
-static int cmd_memory_write(int argc, char **argv)
-{
-    int nerrors = arg_parse(argc, argv, (void **)&memory_write_args);
-    if (nerrors != 0) {
-        arg_print_errors(stderr, memory_write_args.end, argv[0]);
-        return 1;
-    }
-    memory_write_long_term(memory_write_args.content->sval[0]);
-    printf("MEMORY.md updated.\n");
     return 0;
 }
 
@@ -1128,25 +1092,6 @@ esp_err_t serial_cli_init(void)
         .argtable = &skill_search_args,
     };
     esp_console_cmd_register(&skill_search_cmd);
-
-    /* memory_read */
-    esp_console_cmd_t mem_read_cmd = {
-        .command = "memory_read",
-        .help = "Read MEMORY.md",
-        .func = &cmd_memory_read,
-    };
-    esp_console_cmd_register(&mem_read_cmd);
-
-    /* memory_write */
-    memory_write_args.content = arg_str1(NULL, NULL, "<content>", "Content to write");
-    memory_write_args.end = arg_end(1);
-    esp_console_cmd_t mem_write_cmd = {
-        .command = "memory_write",
-        .help = "Write to MEMORY.md",
-        .func = &cmd_memory_write,
-        .argtable = &memory_write_args,
-    };
-    esp_console_cmd_register(&mem_write_cmd);
 
     /* session_list */
     esp_console_cmd_t sess_list_cmd = {
