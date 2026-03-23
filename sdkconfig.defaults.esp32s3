@@ -39,3 +39,4 @@ CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 # ESP-IDF v5.5+ has TX timeout protection (50ms) so device won't hang
 # when no USB host is connected.
 CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192

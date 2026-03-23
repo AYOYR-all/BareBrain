@@ -902,354 +902,329 @@ static int cmd_restart(int argc, char **argv)
     return 0;  /* unreachable */
 }
 
-esp_err_t serial_cli_init(void)
+static esp_err_t register_cli_command(const char *command,
+                                      const char *help,
+                                      esp_console_cmd_func_t func,
+                                      void *argtable)
 {
-    esp_console_repl_t *repl = NULL;
+    esp_console_cmd_t cmd = {
+        .command = command,
+        .help = help,
+        .func = func,
+        .argtable = argtable,
+    };
+    return esp_console_cmd_register(&cmd);
+}
+
+static void register_wifi_console_commands(void)
+{
+    wifi_set_args.ssid = arg_str1(NULL, NULL, "<ssid>", "WiFi SSID");
+    wifi_set_args.password = arg_str1(NULL, NULL, "<password>", "WiFi password");
+    wifi_set_args.end = arg_end(2);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_wifi",
+        "Set WiFi SSID and password (e.g. set_wifi MySSID MyPass)",
+        &cmd_wifi_set,
+        &wifi_set_args));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "wifi_status",
+        "Show WiFi connection status",
+        &cmd_wifi_status,
+        NULL));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "wifi_scan",
+        "Scan and list nearby WiFi APs",
+        &cmd_wifi_scan,
+        NULL));
+}
+
+static void register_feishu_console_commands(void)
+{
+    feishu_creds_args.app_id = arg_str1(NULL, NULL, "<app_id>", "Feishu App ID");
+    feishu_creds_args.app_secret = arg_str1(NULL, NULL, "<app_secret>", "Feishu App Secret");
+    feishu_creds_args.end = arg_end(2);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_feishu_creds",
+        "Set Feishu app credentials (app_id app_secret)",
+        &cmd_set_feishu_creds,
+        &feishu_creds_args));
+
+    feishu_send_args.receive_id = arg_str1(NULL, NULL, "<receive_id>", "Feishu open_id/chat_id");
+    feishu_send_args.text = arg_str1(NULL, NULL, "<text>", "Text message (quote if contains spaces)");
+    feishu_send_args.end = arg_end(2);
+    ESP_ERROR_CHECK(register_cli_command(
+        "feishu_send",
+        "Send Feishu text: feishu_send <open_id|chat_id> \"hello\"",
+        &cmd_feishu_send,
+        &feishu_send_args));
+}
+
+static void register_llm_console_commands(void)
+{
+    api_key_args.key = arg_str1(NULL, NULL, "<key>", "LLM API key");
+    api_key_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_api_key",
+        "Set LLM API key",
+        &cmd_set_api_key,
+        &api_key_args));
+
+    model_args.model = arg_str1(NULL, NULL, "<model>", "Model identifier");
+    model_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_model",
+        "Set LLM model (default: " BRN_LLM_DEFAULT_MODEL ")",
+        &cmd_set_model,
+        &model_args));
+
+    base_url_args.base_url = arg_str1(NULL, NULL, "<base_url>", "LLM API root URL (https://.../v1)");
+    base_url_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_base_url",
+        "Set LLM API base URL root for the current provider",
+        &cmd_set_base_url,
+        &base_url_args));
+
+    provider_args.provider = arg_str1(NULL, NULL, "<provider>", "Model provider (anthropic|openai)");
+    provider_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_model_provider",
+        "Set LLM model provider (default: " BRN_LLM_PROVIDER_DEFAULT ")",
+        &cmd_set_model_provider,
+        &provider_args));
+}
+
+static void register_memory_model_console_commands(void)
+{
+    memory_api_key_args.key = arg_str1(NULL, NULL, "<key>", "Memory indexing model API key");
+    memory_api_key_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_memory_api_key",
+        "Set async memory indexing model API key",
+        &cmd_set_memory_api_key,
+        &memory_api_key_args));
+
+    memory_model_args.model = arg_str1(NULL, NULL, "<model>", "Memory indexing model identifier");
+    memory_model_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_memory_model",
+        "Set async memory indexing model",
+        &cmd_set_memory_model,
+        &memory_model_args));
+
+    memory_provider_args.provider = arg_str1(NULL, NULL, "<provider>", "Memory model provider (anthropic|openai)");
+    memory_provider_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_memory_provider",
+        "Set async memory indexing model provider",
+        &cmd_set_memory_provider,
+        &memory_provider_args));
+
+    memory_base_url_args.base_url = arg_str1(NULL, NULL, "<base_url>", "Memory model API root URL");
+    memory_base_url_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_memory_base_url",
+        "Set async memory indexing base URL",
+        &cmd_set_memory_base_url,
+        &memory_base_url_args));
+}
+
+static void register_search_console_commands(void)
+{
+    search_key_args.key = arg_str1(NULL, NULL, "<key>", "Brave Search API key");
+    search_key_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_search_key",
+        "Set Brave Search API key for web_search tool",
+        &cmd_set_search_key,
+        &search_key_args));
+
+    tavily_key_args.key = arg_str1(NULL, NULL, "<key>", "Tavily Search API key");
+    tavily_key_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_tavily_key",
+        "Set Tavily API key for web_search tool",
+        &cmd_set_tavily_key,
+        &tavily_key_args));
+
+    web_search_args.query = arg_str1(NULL, NULL, "<query>", "Search query");
+    web_search_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "web_search",
+        "Run web search tool directly (e.g. web_search \"latest esp-idf\")",
+        &cmd_web_search,
+        &web_search_args));
+}
+
+static void register_proxy_relay_console_commands(void)
+{
+    proxy_args.host = arg_str1(NULL, NULL, "<host>", "Proxy host/IP");
+    proxy_args.port = arg_int1(NULL, NULL, "<port>", "Proxy port");
+    proxy_args.type = arg_str0(NULL, NULL, "<type>", "Proxy type: http|socks5 (default: http)");
+    proxy_args.end = arg_end(3);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_proxy",
+        "Set proxy (e.g. set_proxy 192.168.1.83 7897 [http|socks5])",
+        &cmd_set_proxy,
+        &proxy_args));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "clear_proxy",
+        "Remove proxy configuration",
+        &cmd_clear_proxy,
+        NULL));
+
+    relay_args.url = arg_str1(NULL, NULL, "<url>", "Relay WebSocket URL");
+    relay_args.device_id = arg_str1(NULL, NULL, "<device_id>", "Relay device ID");
+    relay_args.device_secret = arg_str1(NULL, NULL, "<device_secret>", "Relay device secret");
+    relay_args.end = arg_end(3);
+    ESP_ERROR_CHECK(register_cli_command(
+        "set_relay",
+        "Set relay config: set_relay <url> <device_id> <device_secret>",
+        &cmd_set_relay,
+        &relay_args));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "clear_relay",
+        "Remove relay configuration",
+        &cmd_clear_relay,
+        NULL));
+}
+
+static void register_skill_console_commands(void)
+{
+    ESP_ERROR_CHECK(register_cli_command(
+        "skill_list",
+        "List installed skills from " BRN_SKILLS_PREFIX,
+        &cmd_skill_list,
+        NULL));
+
+    skill_show_args.name = arg_str1(NULL, NULL, "<name>", "Skill name (e.g. weather or weather.md)");
+    skill_show_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "skill_show",
+        "Print full content of one skill file",
+        &cmd_skill_show,
+        &skill_show_args));
+
+    skill_search_args.keyword = arg_str1(NULL, NULL, "<keyword>", "Keyword to search in skills");
+    skill_search_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "skill_search",
+        "Search skill files by keyword (filename + content)",
+        &cmd_skill_search,
+        &skill_search_args));
+}
+
+static void register_session_console_commands(void)
+{
+    ESP_ERROR_CHECK(register_cli_command(
+        "session_list",
+        "List all sessions",
+        &cmd_session_list,
+        NULL));
+
+    session_clear_args.chat_id = arg_str1(NULL, NULL, "<chat_id>", "Chat ID to clear");
+    session_clear_args.end = arg_end(1);
+    ESP_ERROR_CHECK(register_cli_command(
+        "session_clear",
+        "Clear a session",
+        &cmd_session_clear,
+        &session_clear_args));
+}
+
+static void register_maintenance_console_commands(void)
+{
+    ESP_ERROR_CHECK(register_cli_command(
+        "heap_info",
+        "Show heap memory usage",
+        &cmd_heap_info,
+        NULL));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "storage_status",
+        "Show SPIFFS/SD mount status and active data location",
+        &cmd_storage_status,
+        NULL));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "config_show",
+        "Show current configuration (build-time + NVS)",
+        &cmd_config_show,
+        NULL));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "config_reset",
+        "Clear all NVS overrides, revert to build-time defaults",
+        &cmd_config_reset,
+        NULL));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "heartbeat_trigger",
+        "Manually trigger a heartbeat check",
+        &cmd_heartbeat_trigger,
+        NULL));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "cron_start",
+        "Start cron scheduler timer now",
+        &cmd_cron_start,
+        NULL));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "tool_exec",
+        "Execute a registered tool: tool_exec <name> '{...json...}'",
+        &cmd_tool_exec,
+        NULL));
+
+    ESP_ERROR_CHECK(register_cli_command(
+        "restart",
+        "Restart the device",
+        &cmd_restart,
+        NULL));
+}
+
+static esp_err_t create_console_repl(esp_console_repl_t **out_repl)
+{
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     repl_config.prompt = "brn> ";
     repl_config.max_cmdline_length = 256;
 
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
     esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_console_new_repl_uart(&hw_config, &repl_config, &repl));
+    return esp_console_new_repl_uart(&hw_config, &repl_config, out_repl);
 #elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
     esp_console_dev_usb_serial_jtag_config_t hw_config =
         ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_console_new_repl_usb_serial_jtag(&hw_config, &repl_config, &repl));
+    return esp_console_new_repl_usb_serial_jtag(&hw_config, &repl_config, out_repl);
 #elif CONFIG_ESP_CONSOLE_USB_CDC
     esp_console_dev_usb_cdc_config_t hw_config = ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_console_new_repl_usb_cdc(&hw_config, &repl_config, &repl));
+    return esp_console_new_repl_usb_cdc(&hw_config, &repl_config, out_repl);
 #else
     ESP_LOGE(TAG, "No supported console backend is enabled");
     return ESP_ERR_NOT_SUPPORTED;
 #endif
+}
+
+esp_err_t serial_cli_init(void)
+{
+    esp_console_repl_t *repl = NULL;
+
+    ESP_ERROR_CHECK(create_console_repl(&repl));
 
     /* Register commands */
     esp_console_register_help_command();
-
-    /* set_wifi */
-    wifi_set_args.ssid = arg_str1(NULL, NULL, "<ssid>", "WiFi SSID");
-    wifi_set_args.password = arg_str1(NULL, NULL, "<password>", "WiFi password");
-    wifi_set_args.end = arg_end(2);
-    esp_console_cmd_t wifi_set_cmd = {
-        .command = "set_wifi",
-        .help = "Set WiFi SSID and password (e.g. set_wifi MySSID MyPass)",
-        .func = &cmd_wifi_set,
-        .argtable = &wifi_set_args,
-    };
-    esp_console_cmd_register(&wifi_set_cmd);
-
-    /* wifi_status */
-    esp_console_cmd_t wifi_status_cmd = {
-        .command = "wifi_status",
-        .help = "Show WiFi connection status",
-        .func = &cmd_wifi_status,
-    };
-    esp_console_cmd_register(&wifi_status_cmd);
-
-    /* wifi_scan */
-    esp_console_cmd_t wifi_scan_cmd = {
-        .command = "wifi_scan",
-        .help = "Scan and list nearby WiFi APs",
-        .func = &cmd_wifi_scan,
-    };
-    esp_console_cmd_register(&wifi_scan_cmd);
-
-    /* set_feishu_creds */
-    feishu_creds_args.app_id = arg_str1(NULL, NULL, "<app_id>", "Feishu App ID");
-    feishu_creds_args.app_secret = arg_str1(NULL, NULL, "<app_secret>", "Feishu App Secret");
-    feishu_creds_args.end = arg_end(2);
-    esp_console_cmd_t feishu_creds_cmd = {
-        .command = "set_feishu_creds",
-        .help = "Set Feishu app credentials (app_id app_secret)",
-        .func = &cmd_set_feishu_creds,
-        .argtable = &feishu_creds_args,
-    };
-    esp_console_cmd_register(&feishu_creds_cmd);
-
-    /* feishu_send */
-    feishu_send_args.receive_id = arg_str1(NULL, NULL, "<receive_id>", "Feishu open_id/chat_id");
-    feishu_send_args.text = arg_str1(NULL, NULL, "<text>", "Text message (quote if contains spaces)");
-    feishu_send_args.end = arg_end(2);
-    esp_console_cmd_t feishu_send_cmd = {
-        .command = "feishu_send",
-        .help = "Send Feishu text: feishu_send <open_id|chat_id> \"hello\"",
-        .func = &cmd_feishu_send,
-        .argtable = &feishu_send_args,
-    };
-    esp_console_cmd_register(&feishu_send_cmd);
-
-    /* set_api_key */
-    api_key_args.key = arg_str1(NULL, NULL, "<key>", "LLM API key");
-    api_key_args.end = arg_end(1);
-    esp_console_cmd_t api_key_cmd = {
-        .command = "set_api_key",
-        .help = "Set LLM API key",
-        .func = &cmd_set_api_key,
-        .argtable = &api_key_args,
-    };
-    esp_console_cmd_register(&api_key_cmd);
-
-    /* set_model */
-    model_args.model = arg_str1(NULL, NULL, "<model>", "Model identifier");
-    model_args.end = arg_end(1);
-    esp_console_cmd_t model_cmd = {
-        .command = "set_model",
-        .help = "Set LLM model (default: " BRN_LLM_DEFAULT_MODEL ")",
-        .func = &cmd_set_model,
-        .argtable = &model_args,
-    };
-    esp_console_cmd_register(&model_cmd);
-
-    /* set_base_url */
-    base_url_args.base_url = arg_str1(NULL, NULL, "<base_url>", "LLM API root URL (https://.../v1)");
-    base_url_args.end = arg_end(1);
-    esp_console_cmd_t base_url_cmd = {
-        .command = "set_base_url",
-        .help = "Set LLM API base URL root for the current provider",
-        .func = &cmd_set_base_url,
-        .argtable = &base_url_args,
-    };
-    esp_console_cmd_register(&base_url_cmd);
-
-    /* set_model_provider */
-    provider_args.provider = arg_str1(NULL, NULL, "<provider>", "Model provider (anthropic|openai)");
-    provider_args.end = arg_end(1);
-    esp_console_cmd_t provider_cmd = {
-        .command = "set_model_provider",
-        .help = "Set LLM model provider (default: " BRN_LLM_PROVIDER_DEFAULT ")",
-        .func = &cmd_set_model_provider,
-        .argtable = &provider_args,
-    };
-    esp_console_cmd_register(&provider_cmd);
-
-    memory_api_key_args.key = arg_str1(NULL, NULL, "<key>", "Memory indexing model API key");
-    memory_api_key_args.end = arg_end(1);
-    esp_console_cmd_t memory_api_key_cmd = {
-        .command = "set_memory_api_key",
-        .help = "Set async memory indexing model API key",
-        .func = &cmd_set_memory_api_key,
-        .argtable = &memory_api_key_args,
-    };
-    esp_console_cmd_register(&memory_api_key_cmd);
-
-    memory_model_args.model = arg_str1(NULL, NULL, "<model>", "Memory indexing model identifier");
-    memory_model_args.end = arg_end(1);
-    esp_console_cmd_t memory_model_cmd = {
-        .command = "set_memory_model",
-        .help = "Set async memory indexing model",
-        .func = &cmd_set_memory_model,
-        .argtable = &memory_model_args,
-    };
-    esp_console_cmd_register(&memory_model_cmd);
-
-    memory_provider_args.provider = arg_str1(NULL, NULL, "<provider>", "Memory model provider (anthropic|openai)");
-    memory_provider_args.end = arg_end(1);
-    esp_console_cmd_t memory_provider_cmd = {
-        .command = "set_memory_provider",
-        .help = "Set async memory indexing model provider",
-        .func = &cmd_set_memory_provider,
-        .argtable = &memory_provider_args,
-    };
-    esp_console_cmd_register(&memory_provider_cmd);
-
-    memory_base_url_args.base_url = arg_str1(NULL, NULL, "<base_url>", "Memory model API root URL");
-    memory_base_url_args.end = arg_end(1);
-    esp_console_cmd_t memory_base_url_cmd = {
-        .command = "set_memory_base_url",
-        .help = "Set async memory indexing base URL",
-        .func = &cmd_set_memory_base_url,
-        .argtable = &memory_base_url_args,
-    };
-    esp_console_cmd_register(&memory_base_url_cmd);
-
-    /* skill_list */
-    esp_console_cmd_t skill_list_cmd = {
-        .command = "skill_list",
-        .help = "List installed skills from " BRN_SKILLS_PREFIX,
-        .func = &cmd_skill_list,
-    };
-    esp_console_cmd_register(&skill_list_cmd);
-
-    /* skill_show */
-    skill_show_args.name = arg_str1(NULL, NULL, "<name>", "Skill name (e.g. weather or weather.md)");
-    skill_show_args.end = arg_end(1);
-    esp_console_cmd_t skill_show_cmd = {
-        .command = "skill_show",
-        .help = "Print full content of one skill file",
-        .func = &cmd_skill_show,
-        .argtable = &skill_show_args,
-    };
-    esp_console_cmd_register(&skill_show_cmd);
-
-    /* skill_search */
-    skill_search_args.keyword = arg_str1(NULL, NULL, "<keyword>", "Keyword to search in skills");
-    skill_search_args.end = arg_end(1);
-    esp_console_cmd_t skill_search_cmd = {
-        .command = "skill_search",
-        .help = "Search skill files by keyword (filename + content)",
-        .func = &cmd_skill_search,
-        .argtable = &skill_search_args,
-    };
-    esp_console_cmd_register(&skill_search_cmd);
-
-    /* session_list */
-    esp_console_cmd_t sess_list_cmd = {
-        .command = "session_list",
-        .help = "List all sessions",
-        .func = &cmd_session_list,
-    };
-    esp_console_cmd_register(&sess_list_cmd);
-
-    /* session_clear */
-    session_clear_args.chat_id = arg_str1(NULL, NULL, "<chat_id>", "Chat ID to clear");
-    session_clear_args.end = arg_end(1);
-    esp_console_cmd_t sess_clear_cmd = {
-        .command = "session_clear",
-        .help = "Clear a session",
-        .func = &cmd_session_clear,
-        .argtable = &session_clear_args,
-    };
-    esp_console_cmd_register(&sess_clear_cmd);
-
-    /* heap_info */
-    esp_console_cmd_t heap_cmd = {
-        .command = "heap_info",
-        .help = "Show heap memory usage",
-        .func = &cmd_heap_info,
-    };
-    esp_console_cmd_register(&heap_cmd);
-
-    /* storage_status */
-    esp_console_cmd_t storage_status_cmd = {
-        .command = "storage_status",
-        .help = "Show SPIFFS/SD mount status and active data location",
-        .func = &cmd_storage_status,
-    };
-    esp_console_cmd_register(&storage_status_cmd);
-
-    /* set_search_key */
-    search_key_args.key = arg_str1(NULL, NULL, "<key>", "Brave Search API key");
-    search_key_args.end = arg_end(1);
-    esp_console_cmd_t search_key_cmd = {
-        .command = "set_search_key",
-        .help = "Set Brave Search API key for web_search tool",
-        .func = &cmd_set_search_key,
-        .argtable = &search_key_args,
-    };
-    esp_console_cmd_register(&search_key_cmd);
-
-    /* set_tavily_key */
-    tavily_key_args.key = arg_str1(NULL, NULL, "<key>", "Tavily Search API key");
-    tavily_key_args.end = arg_end(1);
-    esp_console_cmd_t tavily_key_cmd = {
-        .command = "set_tavily_key",
-        .help = "Set Tavily API key for web_search tool",
-        .func = &cmd_set_tavily_key,
-        .argtable = &tavily_key_args,
-    };
-    esp_console_cmd_register(&tavily_key_cmd);
-
-    /* set_proxy */
-    proxy_args.host = arg_str1(NULL, NULL, "<host>", "Proxy host/IP");
-    proxy_args.port = arg_int1(NULL, NULL, "<port>", "Proxy port");
-    proxy_args.type = arg_str0(NULL, NULL, "<type>", "Proxy type: http|socks5 (default: http)");
-    proxy_args.end = arg_end(3);
-    esp_console_cmd_t proxy_cmd = {
-        .command = "set_proxy",
-        .help = "Set proxy (e.g. set_proxy 192.168.1.83 7897 [http|socks5])",
-        .func = &cmd_set_proxy,
-        .argtable = &proxy_args,
-    };
-    esp_console_cmd_register(&proxy_cmd);
-
-    /* clear_proxy */
-    esp_console_cmd_t clear_proxy_cmd = {
-        .command = "clear_proxy",
-        .help = "Remove proxy configuration",
-        .func = &cmd_clear_proxy,
-    };
-    esp_console_cmd_register(&clear_proxy_cmd);
-
-    /* set_relay */
-    relay_args.url = arg_str1(NULL, NULL, "<url>", "Relay WebSocket URL");
-    relay_args.device_id = arg_str1(NULL, NULL, "<device_id>", "Relay device ID");
-    relay_args.device_secret = arg_str1(NULL, NULL, "<device_secret>", "Relay device secret");
-    relay_args.end = arg_end(3);
-    esp_console_cmd_t relay_cmd = {
-        .command = "set_relay",
-        .help = "Set relay config: set_relay <url> <device_id> <device_secret>",
-        .func = &cmd_set_relay,
-        .argtable = &relay_args,
-    };
-    esp_console_cmd_register(&relay_cmd);
-
-    /* clear_relay */
-    esp_console_cmd_t clear_relay_cmd = {
-        .command = "clear_relay",
-        .help = "Remove relay configuration",
-        .func = &cmd_clear_relay,
-    };
-    esp_console_cmd_register(&clear_relay_cmd);
-
-    /* config_show */
-    esp_console_cmd_t config_show_cmd = {
-        .command = "config_show",
-        .help = "Show current configuration (build-time + NVS)",
-        .func = &cmd_config_show,
-    };
-    esp_console_cmd_register(&config_show_cmd);
-
-    /* config_reset */
-    esp_console_cmd_t config_reset_cmd = {
-        .command = "config_reset",
-        .help = "Clear all NVS overrides, revert to build-time defaults",
-        .func = &cmd_config_reset,
-    };
-    esp_console_cmd_register(&config_reset_cmd);
-
-    /* heartbeat_trigger */
-    esp_console_cmd_t heartbeat_cmd = {
-        .command = "heartbeat_trigger",
-        .help = "Manually trigger a heartbeat check",
-        .func = &cmd_heartbeat_trigger,
-    };
-    esp_console_cmd_register(&heartbeat_cmd);
-
-    /* cron_start */
-    esp_console_cmd_t cron_start_cmd = {
-        .command = "cron_start",
-        .help = "Start cron scheduler timer now",
-        .func = &cmd_cron_start,
-    };
-    esp_console_cmd_register(&cron_start_cmd);
-
-    /* tool_exec */
-    esp_console_cmd_t tool_exec_cmd = {
-        .command = "tool_exec",
-        .help = "Execute a registered tool: tool_exec <name> '{...json...}'",
-        .func = &cmd_tool_exec,
-    };
-    esp_console_cmd_register(&tool_exec_cmd);
-
-    /* web_search */
-    web_search_args.query = arg_str1(NULL, NULL, "<query>", "Search query");
-    web_search_args.end = arg_end(1);
-    esp_console_cmd_t web_search_cmd = {
-        .command = "web_search",
-        .help = "Run web search tool directly (e.g. web_search \"latest esp-idf\")",
-        .func = &cmd_web_search,
-        .argtable = &web_search_args,
-    };
-    esp_console_cmd_register(&web_search_cmd);
-
-    /* restart */
-    esp_console_cmd_t restart_cmd = {
-        .command = "restart",
-        .help = "Restart the device",
-        .func = &cmd_restart,
-    };
-    esp_console_cmd_register(&restart_cmd);
+    register_wifi_console_commands();
+    register_feishu_console_commands();
+    register_llm_console_commands();
+    register_memory_model_console_commands();
+    register_search_console_commands();
+    register_proxy_relay_console_commands();
+    register_skill_console_commands();
+    register_session_console_commands();
+    register_maintenance_console_commands();
 
     /* Start REPL */
     ESP_ERROR_CHECK(esp_console_start_repl(repl));

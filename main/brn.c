@@ -43,6 +43,14 @@ static esp_err_t init_nvs(void)
     return ret;
 }
 
+static void log_main_stack_watermark(const char *stage)
+{
+    size_t watermark = uxTaskGetStackHighWaterMark(NULL) * sizeof(StackType_t);
+    ESP_LOGI(TAG, "main stack watermark after %s: %u bytes",
+             stage ? stage : "(unknown)",
+             (unsigned int)watermark);
+}
+
 /* Outbound dispatch task: reads from outbound queue and routes to channels */
 static void outbound_dispatch_task(void *arg)
 {
@@ -98,8 +106,11 @@ void app_main(void)
 
     /* Phase 1: Core infrastructure */
     ESP_ERROR_CHECK(init_nvs());
+    log_main_stack_watermark("init_nvs");
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    log_main_stack_watermark("esp_event_loop_create_default");
     ESP_ERROR_CHECK(storage_init());
+    log_main_stack_watermark("storage_init");
 
     /* Initialize subsystems */
     ESP_ERROR_CHECK(message_bus_init());
@@ -114,13 +125,16 @@ void app_main(void)
     ESP_ERROR_CHECK(llm_proxy_init());
     ESP_ERROR_CHECK(memory_model_init());
     ESP_ERROR_CHECK(memory_worker_init());
+    log_main_stack_watermark("memory subsystem init");
     ESP_ERROR_CHECK(tool_registry_init());
     ESP_ERROR_CHECK(cron_service_init());
     ESP_ERROR_CHECK(heartbeat_init());
     ESP_ERROR_CHECK(agent_loop_init());
+    log_main_stack_watermark("core service init");
 
     /* Start Serial CLI first (works without WiFi) */
     ESP_ERROR_CHECK(serial_cli_init());
+    log_main_stack_watermark("serial_cli_init");
 
     /* Start WiFi */
     esp_err_t wifi_err = wifi_manager_start();
@@ -138,9 +152,11 @@ void app_main(void)
     } else {
         ESP_LOGW(TAG, "No WiFi credentials configured");
     }
+    log_main_stack_watermark("wifi startup");
 
     if (!wifi_ok) {
         ESP_LOGW(TAG, "Entering WiFi onboarding mode...");
+        log_main_stack_watermark("wifi_onboard_start captive");
         wifi_onboard_start(WIFI_ONBOARD_MODE_CAPTIVE);  /* blocks, restarts on success */
         return;  /* unreachable */
     }
@@ -148,6 +164,7 @@ void app_main(void)
     if (wifi_onboard_start(WIFI_ONBOARD_MODE_ADMIN) != ESP_OK) {
         ESP_LOGW(TAG, "Local admin portal unavailable; continuing without config hotspot");
     }
+    log_main_stack_watermark("wifi_onboard_start admin");
 
     {
         /* Outbound dispatch task should start first to avoid dropping early replies. */
@@ -166,6 +183,7 @@ void app_main(void)
         heartbeat_start();
         ESP_ERROR_CHECK(ws_server_start());
 
+        log_main_stack_watermark("network service start");
         ESP_LOGI(TAG, "All services started!");
     }
 
