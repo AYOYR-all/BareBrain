@@ -5,6 +5,7 @@
 #include "tools/tool_files.h"
 #include "tools/tool_cron.h"
 #include "tools/tool_gpio.h"
+#include "tools/tool_memory.h"
 
 #include <string.h>
 #include "esp_log.h"
@@ -12,7 +13,7 @@
 
 static const char *TAG = "tools";
 
-#define MAX_TOOLS 16
+#define MAX_TOOLS 20
 
 static brn_tool_t s_tools[MAX_TOOLS];
 static int s_tool_count = 0;
@@ -213,6 +214,69 @@ esp_err_t tool_registry_init(void)
         .execute = tool_gpio_read_all_execute,
     };
     register_tool(&ga);
+
+    brn_tool_t ms = {
+        .name = "memory_search",
+        .description = "Search the indexed memory directory and return matching node summaries.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{\"query\":{\"type\":\"string\"},"
+            "\"kind\":{\"type\":\"string\"},"
+            "\"tag\":{\"type\":\"string\"},"
+            "\"limit\":{\"type\":\"integer\"}},"
+            "\"required\":[]}",
+        .execute = tool_memory_search_execute,
+    };
+    register_tool(&ms);
+
+    brn_tool_t mr = {
+        .name = "memory_read_node",
+        .description = "Read the full detail text for one memory node by ID.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{\"node_id\":{\"type\":\"string\",\"description\":\"Memory node ID\"}},"
+            "\"required\":[\"node_id\"]}",
+        .execute = tool_memory_read_node_execute,
+    };
+    register_tool(&mr);
+
+    brn_tool_t ml = {
+        .name = "memory_expand_links",
+        .description = "Show related memory nodes linked from a node ID.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{\"node_id\":{\"type\":\"string\"},"
+            "\"limit\":{\"type\":\"integer\"}},"
+            "\"required\":[\"node_id\"]}",
+        .execute = tool_memory_expand_links_execute,
+    };
+    register_tool(&ml);
+
+    brn_tool_t mu = {
+        .name = "memory_upsert_note",
+        .description = "Queue a memory note for async indexing into the memory graph.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{\"kind\":{\"type\":\"string\"},"
+            "\"title\":{\"type\":\"string\"},"
+            "\"content\":{\"type\":\"string\"},"
+            "\"source\":{\"type\":\"string\"},"
+            "\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},"
+            "\"required\":[\"title\",\"content\"]}",
+        .execute = tool_memory_upsert_note_execute,
+    };
+    register_tool(&mu);
+
+    brn_tool_t mx = {
+        .name = "memory_reindex_status",
+        .description = "Show async memory indexing queue status and the active memory model.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{},"
+            "\"required\":[]}",
+        .execute = tool_memory_reindex_status_execute,
+    };
+    register_tool(&mx);
 
     build_tools_json();
 

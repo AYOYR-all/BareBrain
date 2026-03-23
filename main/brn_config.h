@@ -55,6 +55,18 @@
 #ifndef BRN_SECRET_TAVILY_KEY
 #define BRN_SECRET_TAVILY_KEY      ""
 #endif
+#ifndef BRN_SECRET_MEMORY_API_KEY
+#define BRN_SECRET_MEMORY_API_KEY  ""
+#endif
+#ifndef BRN_SECRET_MEMORY_MODEL
+#define BRN_SECRET_MEMORY_MODEL    ""
+#endif
+#ifndef BRN_SECRET_MEMORY_PROVIDER
+#define BRN_SECRET_MEMORY_PROVIDER ""
+#endif
+#ifndef BRN_SECRET_MEMORY_BASE_URL
+#define BRN_SECRET_MEMORY_BASE_URL ""
+#endif
 
 /* WiFi */
 #define BRN_WIFI_MAX_RETRY          10
@@ -97,6 +109,25 @@
 #define BRN_LLM_STREAM_BUF_SIZE     (32 * 1024)
 #define BRN_LLM_LOG_VERBOSE_PAYLOAD 0
 #define BRN_LLM_LOG_PREVIEW_BYTES   160
+
+/* Memory Indexing */
+#define BRN_MEMORY_MAX_NODES            64
+#define BRN_MEMORY_MAX_TAGS             6
+#define BRN_MEMORY_MAX_LINKS            8
+#define BRN_MEMORY_ID_LEN               24
+#define BRN_MEMORY_KIND_LEN             16
+#define BRN_MEMORY_TITLE_LEN            72
+#define BRN_MEMORY_SUMMARY_LEN          224
+#define BRN_MEMORY_TAG_LEN              24
+#define BRN_MEMORY_PATH_LEN             160
+#define BRN_MEMORY_PROMPT_LIMIT         8
+#define BRN_MEMORY_CATALOG_LIMIT        12
+#define BRN_MEMORY_DEFAULT_SEARCH_LIMIT 6
+#define BRN_MEMORY_WORKER_STACK         (14 * 1024)
+#define BRN_MEMORY_WORKER_PRIO          4
+#define BRN_MEMORY_WORKER_CORE          0
+#define BRN_MEMORY_WORKER_INTERVAL_MS   5000
+#define BRN_MEMORY_MODEL_MAX_TOKENS     900
 
 /* Message Bus */
 #define BRN_BUS_QUEUE_LEN           16
@@ -163,6 +194,7 @@
 #define BRN_NVS_RELAY               "relay_config"
 #define BRN_NVS_PROXY               "proxy_config"
 #define BRN_NVS_SEARCH              "search_config"
+#define BRN_NVS_MEMORY_LLM          "memory_llm"
 
 /* NVS Keys */
 #define BRN_NVS_KEY_SSID            "ssid"
@@ -180,6 +212,10 @@
 #define BRN_NVS_KEY_PROXY_HOST      "host"
 #define BRN_NVS_KEY_PROXY_PORT      "port"
 #define BRN_NVS_KEY_PROXY_TYPE      "proxy_type"
+#define BRN_NVS_KEY_MEMORY_API_KEY  "memory_api_key"
+#define BRN_NVS_KEY_MEMORY_MODEL    "memory_model"
+#define BRN_NVS_KEY_MEMORY_PROVIDER "memory_provider"
+#define BRN_NVS_KEY_MEMORY_BASE_URL "memory_base_url"
 
 /* WiFi Onboarding (Captive Portal) */
 #define BRN_ONBOARD_AP_PREFIX    "BRN-"

@@ -73,6 +73,24 @@ static const char ONBOARD_HTML[] =
 "<div class='hint'>Optional API root. Keep empty for official defaults. For OpenAI-compatible gateways, set provider to OpenAI and fill a https://.../v1 root.</div>"
 "</div></div>"
 
+"<div class='card collapsed' id='sec-memory-llm'>"
+"<div class='card-hdr' onclick='toggle(this)'>Memory Index Model</div>"
+"<div class='card-body'>"
+"<div class='hint'>Optional cheaper model used only for async memory summaries and relation extraction. Leave fields empty to reuse the main LLM config.</div>"
+"<label>Memory API Key</label>"
+"<input id='memory_api_key' type='password' placeholder='optional'>"
+"<label>Memory Model</label>"
+"<input id='memory_model' placeholder='gpt-4.1-mini / claude-haiku'>"
+"<label>Memory Provider</label>"
+"<select id='memory_provider'>"
+"<option value=''>Reuse Main Provider</option>"
+"<option value='anthropic'>Anthropic</option>"
+"<option value='openai'>OpenAI</option>"
+"</select>"
+"<label>Memory Base URL</label>"
+"<input id='memory_base_url' placeholder='optional https://.../v1'>"
+"</div></div>"
+
 /* Feishu section */
 "<div class='card collapsed' id='sec-feishu'>"
 "<div class='card-hdr' onclick='toggle(this)'>Feishu (Optional)</div>"
@@ -152,6 +170,7 @@ static const char ONBOARD_HTML[] =
 
 "function save(){"
 "var fields=['ssid','password','api_key','model','provider','base_url',"
+"'memory_api_key','memory_model','memory_provider','memory_base_url',"
 "'feishu_app_id','feishu_app_secret','relay_url','relay_device_id','relay_device_secret',"
 "'proxy_host','proxy_port','proxy_type','search_key','tavily_key'];"
 "var data={};"

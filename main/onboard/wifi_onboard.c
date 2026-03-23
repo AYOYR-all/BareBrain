@@ -221,6 +221,10 @@ static esp_err_t http_get_config(httpd_req_t *req)
     json_add_effective_config(root, "model", BRN_NVS_LLM, BRN_NVS_KEY_MODEL, BRN_SECRET_MODEL);
     json_add_effective_config(root, "provider", BRN_NVS_LLM, BRN_NVS_KEY_PROVIDER, BRN_SECRET_MODEL_PROVIDER);
     json_add_effective_config(root, "base_url", BRN_NVS_LLM, BRN_NVS_KEY_BASE_URL, BRN_SECRET_BASE_URL);
+    json_add_effective_config(root, "memory_api_key", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_API_KEY, BRN_SECRET_MEMORY_API_KEY);
+    json_add_effective_config(root, "memory_model", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_MODEL, BRN_SECRET_MEMORY_MODEL);
+    json_add_effective_config(root, "memory_provider", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_PROVIDER, BRN_SECRET_MEMORY_PROVIDER);
+    json_add_effective_config(root, "memory_base_url", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_BASE_URL, BRN_SECRET_MEMORY_BASE_URL);
     json_add_effective_config(root, "feishu_app_id", BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_ID, BRN_SECRET_FEISHU_APP_ID);
     json_add_effective_config(root, "feishu_app_secret", BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_SECRET, BRN_SECRET_FEISHU_APP_SECRET);
     json_add_effective_config(root, "relay_url", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_URL, BRN_SECRET_RELAY_URL);
@@ -347,6 +351,10 @@ static esp_err_t http_post_save(httpd_req_t *req)
     nvs_sync_field(root, "model",    BRN_NVS_LLM,    BRN_NVS_KEY_MODEL);
     nvs_sync_field(root, "provider", BRN_NVS_LLM,    BRN_NVS_KEY_PROVIDER);
     nvs_sync_field(root, "base_url", BRN_NVS_LLM,    BRN_NVS_KEY_BASE_URL);
+    nvs_sync_field(root, "memory_api_key",  BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_API_KEY);
+    nvs_sync_field(root, "memory_model",    BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_MODEL);
+    nvs_sync_field(root, "memory_provider", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_PROVIDER);
+    nvs_sync_field(root, "memory_base_url", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_BASE_URL);
 
     /* Feishu */
     nvs_sync_field(root, "feishu_app_id",     BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_ID);

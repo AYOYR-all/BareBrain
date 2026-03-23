@@ -89,7 +89,7 @@ static void append_turn_context_prompt(char *prompt, size_t size, const brn_msg_
 
 static char *patch_tool_input_with_context(const llm_tool_call_t *call, const brn_msg_t *msg)
 {
-    if (!call || !msg || strcmp(call->name, "cron_add") != 0) {
+    if (!call || !msg) {
         return NULL;
     }
 
@@ -104,29 +104,43 @@ static char *patch_tool_input_with_context(const llm_tool_call_t *call, const br
 
     bool changed = false;
 
-    cJSON *channel_item = cJSON_GetObjectItem(root, "channel");
-    const char *channel = cJSON_IsString(channel_item) ? channel_item->valuestring : NULL;
-
-    if ((!channel || channel[0] == '\0') && msg->channel[0] != '\0') {
-        json_set_string(root, "channel", msg->channel);
-        channel = msg->channel;
-        changed = true;
-    }
-
-    if (channel && msg->chat_id[0] != '\0' && strcmp(channel, msg->channel) == 0) {
-        cJSON *chat_item = cJSON_GetObjectItem(root, "chat_id");
-        const char *chat_id = cJSON_IsString(chat_item) ? chat_item->valuestring : NULL;
-        if (!chat_id || chat_id[0] == '\0' || strcmp(chat_id, "cron") == 0) {
-            json_set_string(root, "chat_id", msg->chat_id);
+    if (strcmp(call->name, "cron_add") == 0) {
+        cJSON *channel_item = cJSON_GetObjectItem(root, "channel");
+        const char *channel = cJSON_IsString(channel_item) ? channel_item->valuestring : NULL;
+        if ((!channel || channel[0] == '\0') && msg->channel[0] != '\0') {
+            json_set_string(root, "channel", msg->channel);
+            channel = msg->channel;
             changed = true;
         }
+        if (channel && msg->chat_id[0] != '\0' && strcmp(channel, msg->channel) == 0) {
+            cJSON *chat_item = cJSON_GetObjectItem(root, "chat_id");
+            const char *chat_id = cJSON_IsString(chat_item) ? chat_item->valuestring : NULL;
+            if (!chat_id || chat_id[0] == '\0' || strcmp(chat_id, "cron") == 0) {
+                json_set_string(root, "chat_id", msg->chat_id);
+                changed = true;
+            }
+        }
+    } else if (strcmp(call->name, "memory_upsert_note") == 0) {
+        cJSON *source_item = cJSON_GetObjectItem(root, "source");
+        const char *source = cJSON_IsString(source_item) ? source_item->valuestring : NULL;
+        if (!source || source[0] == '\0') {
+            char source_value[128];
+            snprintf(source_value, sizeof(source_value), "%.15s:%.95s",
+                     msg->channel[0] ? msg->channel : "unknown",
+                     msg->chat_id[0] ? msg->chat_id : "empty");
+            json_set_string(root, "source", source_value);
+            changed = true;
+        }
+    } else {
+        cJSON_Delete(root);
+        return NULL;
     }
 
     char *patched = NULL;
     if (changed) {
         patched = cJSON_PrintUnformatted(root);
         if (patched) {
-            ESP_LOGI(TAG, "Patched cron_add target to %s:%s", msg->channel, msg->chat_id);
+            ESP_LOGI(TAG, "Patched tool input for %s", call->name);
         }
     }
 

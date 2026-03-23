@@ -32,6 +32,15 @@ esp_err_t llm_set_model(const char *model);
  */
 esp_err_t llm_set_base_url(const char *base_url);
 
+void llm_get_config(char *api_key,
+                    size_t api_key_size,
+                    char *model,
+                    size_t model_size,
+                    char *provider,
+                    size_t provider_size,
+                    char *base_url,
+                    size_t base_url_size);
+
 /* ── Tool Use Support ──────────────────────────────────────────── */
 
 typedef struct {

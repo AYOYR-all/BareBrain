@@ -4,7 +4,9 @@
 #include "channels/feishu/feishu_bot.h"
 #include "channels/relay/relay_client.h"
 #include "llm/llm_proxy.h"
+#include "memory/memory_model.h"
 #include "memory/memory_store.h"
+#include "memory/memory_worker.h"
 #include "memory/session_mgr.h"
 #include "proxy/http_proxy.h"
 #include "tools/tool_registry.h"
@@ -173,6 +175,79 @@ static int cmd_set_model_provider(int argc, char **argv)
     }
     llm_set_provider(provider_args.provider->sval[0]);
     printf("Model provider set.\n");
+    return 0;
+}
+
+/* --- memory model config commands --- */
+static struct {
+    struct arg_str *key;
+    struct arg_end *end;
+} memory_api_key_args;
+
+static struct {
+    struct arg_str *model;
+    struct arg_end *end;
+} memory_model_args;
+
+static struct {
+    struct arg_str *provider;
+    struct arg_end *end;
+} memory_provider_args;
+
+static struct {
+    struct arg_str *base_url;
+    struct arg_end *end;
+} memory_base_url_args;
+
+static int cmd_set_memory_api_key(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **)&memory_api_key_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, memory_api_key_args.end, argv[0]);
+        return 1;
+    }
+    memory_model_set_api_key(memory_api_key_args.key->sval[0]);
+    printf("Memory API key saved.\n");
+    return 0;
+}
+
+static int cmd_set_memory_model(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **)&memory_model_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, memory_model_args.end, argv[0]);
+        return 1;
+    }
+    memory_model_set_model(memory_model_args.model->sval[0]);
+    printf("Memory model set.\n");
+    return 0;
+}
+
+static int cmd_set_memory_provider(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **)&memory_provider_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, memory_provider_args.end, argv[0]);
+        return 1;
+    }
+    memory_model_set_provider(memory_provider_args.provider->sval[0]);
+    printf("Memory provider set.\n");
+    return 0;
+}
+
+static int cmd_set_memory_base_url(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **)&memory_base_url_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, memory_base_url_args.end, argv[0]);
+        return 1;
+    }
+    esp_err_t err = memory_model_set_base_url(memory_base_url_args.base_url->sval[0]);
+    if (err != ESP_OK) {
+        printf("Memory base URL rejected: %s\n", esp_err_to_name(err));
+        return 1;
+    }
+    printf("Memory base URL set.\n");
     return 0;
 }
 
@@ -637,6 +712,10 @@ static int cmd_config_show(int argc, char **argv)
     print_config("Model",      BRN_NVS_LLM,    BRN_NVS_KEY_MODEL,    BRN_SECRET_MODEL,      false);
     print_config("Provider",   BRN_NVS_LLM,    BRN_NVS_KEY_PROVIDER, BRN_SECRET_MODEL_PROVIDER, false);
     print_config("Base URL",   BRN_NVS_LLM,    BRN_NVS_KEY_BASE_URL, BRN_SECRET_BASE_URL,   false);
+    print_config("Mem API Key", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_API_KEY, BRN_SECRET_MEMORY_API_KEY, true);
+    print_config("Mem Model",   BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_MODEL, BRN_SECRET_MEMORY_MODEL, false);
+    print_config("Mem Provider", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_PROVIDER, BRN_SECRET_MEMORY_PROVIDER, false);
+    print_config("Mem Base URL", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_BASE_URL, BRN_SECRET_MEMORY_BASE_URL, false);
     print_config("Relay URL",  BRN_NVS_RELAY,  BRN_NVS_KEY_RELAY_URL, BRN_SECRET_RELAY_URL, false);
     print_config("Relay Device", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_ID,
                  BRN_SECRET_RELAY_DEVICE_ID, false);
@@ -656,7 +735,8 @@ static int cmd_config_reset(int argc, char **argv)
     (void)argc;
     (void)argv;
     const char *namespaces[] = {
-        BRN_NVS_WIFI, BRN_NVS_FEISHU, BRN_NVS_LLM, BRN_NVS_RELAY, BRN_NVS_PROXY, BRN_NVS_SEARCH
+        BRN_NVS_WIFI, BRN_NVS_FEISHU, BRN_NVS_LLM, BRN_NVS_MEMORY_LLM,
+        BRN_NVS_RELAY, BRN_NVS_PROXY, BRN_NVS_SEARCH
     };
     const size_t namespace_count = sizeof(namespaces) / sizeof(namespaces[0]);
     for (size_t i = 0; i < namespace_count; i++) {
@@ -978,6 +1058,46 @@ esp_err_t serial_cli_init(void)
         .argtable = &provider_args,
     };
     esp_console_cmd_register(&provider_cmd);
+
+    memory_api_key_args.key = arg_str1(NULL, NULL, "<key>", "Memory indexing model API key");
+    memory_api_key_args.end = arg_end(1);
+    esp_console_cmd_t memory_api_key_cmd = {
+        .command = "set_memory_api_key",
+        .help = "Set async memory indexing model API key",
+        .func = &cmd_set_memory_api_key,
+        .argtable = &memory_api_key_args,
+    };
+    esp_console_cmd_register(&memory_api_key_cmd);
+
+    memory_model_args.model = arg_str1(NULL, NULL, "<model>", "Memory indexing model identifier");
+    memory_model_args.end = arg_end(1);
+    esp_console_cmd_t memory_model_cmd = {
+        .command = "set_memory_model",
+        .help = "Set async memory indexing model",
+        .func = &cmd_set_memory_model,
+        .argtable = &memory_model_args,
+    };
+    esp_console_cmd_register(&memory_model_cmd);
+
+    memory_provider_args.provider = arg_str1(NULL, NULL, "<provider>", "Memory model provider (anthropic|openai)");
+    memory_provider_args.end = arg_end(1);
+    esp_console_cmd_t memory_provider_cmd = {
+        .command = "set_memory_provider",
+        .help = "Set async memory indexing model provider",
+        .func = &cmd_set_memory_provider,
+        .argtable = &memory_provider_args,
+    };
+    esp_console_cmd_register(&memory_provider_cmd);
+
+    memory_base_url_args.base_url = arg_str1(NULL, NULL, "<base_url>", "Memory model API root URL");
+    memory_base_url_args.end = arg_end(1);
+    esp_console_cmd_t memory_base_url_cmd = {
+        .command = "set_memory_base_url",
+        .help = "Set async memory indexing base URL",
+        .func = &cmd_set_memory_base_url,
+        .argtable = &memory_base_url_args,
+    };
+    esp_console_cmd_register(&memory_base_url_cmd);
 
     /* skill_list */
     esp_console_cmd_t skill_list_cmd = {

@@ -29,3 +29,9 @@ esp_err_t memory_append_today(const char *note);
  * @param days  Number of days to look back (default 3)
  */
 esp_err_t memory_read_recent(char *buf, size_t size, int days);
+
+esp_err_t memory_store_get_index_path(char *buf, size_t size);
+esp_err_t memory_store_get_node_path(const char *node_id, char *buf, size_t size);
+esp_err_t memory_store_get_meta_path(const char *node_id, char *buf, size_t size);
+esp_err_t memory_store_get_inbox_dir(char *buf, size_t size);
+esp_err_t memory_store_get_failed_dir(char *buf, size_t size);

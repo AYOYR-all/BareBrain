@@ -16,9 +16,34 @@ static void memory_file_path(char *buf, size_t size)
     snprintf(buf, size, "%s/memory/MEMORY.md", storage_get_data_base());
 }
 
+static void memory_index_path(char *buf, size_t size)
+{
+    snprintf(buf, size, "%s/memory/index.json", storage_get_data_base());
+}
+
 static void memory_daily_path(char *buf, size_t size, const char *date_str)
 {
     snprintf(buf, size, "%s/memory/%s.md", storage_get_data_base(), date_str);
+}
+
+static void memory_node_path(const char *node_id, char *buf, size_t size)
+{
+    snprintf(buf, size, "%s/memory/nodes/%s.md", storage_get_data_base(), node_id);
+}
+
+static void memory_meta_path(const char *node_id, char *buf, size_t size)
+{
+    snprintf(buf, size, "%s/memory/meta/%s.json", storage_get_data_base(), node_id);
+}
+
+static void memory_inbox_dir(char *buf, size_t size)
+{
+    snprintf(buf, size, "%s/memory/inbox", storage_get_data_base());
+}
+
+static void memory_failed_dir(char *buf, size_t size)
+{
+    snprintf(buf, size, "%s/memory/failed", storage_get_data_base());
 }
 
 static void get_date_str(char *buf, size_t size, int days_ago)
@@ -33,6 +58,20 @@ static void get_date_str(char *buf, size_t size, int days_ago)
 
 esp_err_t memory_store_init(void)
 {
+    char probe_paths[5][128] = {{0}};
+
+    memory_index_path(probe_paths[0], sizeof(probe_paths[0]));
+    memory_node_path(".probe", probe_paths[1], sizeof(probe_paths[1]));
+    memory_meta_path(".probe", probe_paths[2], sizeof(probe_paths[2]));
+    snprintf(probe_paths[3], sizeof(probe_paths[3]), "%s/memory/inbox/.probe", storage_get_data_base());
+    snprintf(probe_paths[4], sizeof(probe_paths[4]), "%s/memory/failed/.probe", storage_get_data_base());
+
+    for (size_t i = 0; i < 5; ++i) {
+        if (storage_fs_ensure_parent_dir(probe_paths[i]) != ESP_OK) {
+            ESP_LOGW(TAG, "Cannot prepare memory layout for %s", probe_paths[i]);
+        }
+    }
+
     ESP_LOGI(TAG, "Memory store initialized at %s/memory", storage_get_data_base());
     return ESP_OK;
 }
@@ -129,5 +168,50 @@ esp_err_t memory_read_recent(char *buf, size_t size, int days)
         fclose(f);
     }
 
+    return ESP_OK;
+}
+
+esp_err_t memory_store_get_index_path(char *buf, size_t size)
+{
+    if (!buf || size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    memory_index_path(buf, size);
+    return ESP_OK;
+}
+
+esp_err_t memory_store_get_node_path(const char *node_id, char *buf, size_t size)
+{
+    if (!node_id || !buf || size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    memory_node_path(node_id, buf, size);
+    return ESP_OK;
+}
+
+esp_err_t memory_store_get_meta_path(const char *node_id, char *buf, size_t size)
+{
+    if (!node_id || !buf || size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    memory_meta_path(node_id, buf, size);
+    return ESP_OK;
+}
+
+esp_err_t memory_store_get_inbox_dir(char *buf, size_t size)
+{
+    if (!buf || size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    memory_inbox_dir(buf, size);
+    return ESP_OK;
+}
+
+esp_err_t memory_store_get_failed_dir(char *buf, size_t size)
+{
+    if (!buf || size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    memory_failed_dir(buf, size);
     return ESP_OK;
 }

@@ -16,6 +16,9 @@
 #include "llm/llm_proxy.h"
 #include "agent/agent_loop.h"
 #include "memory/memory_store.h"
+#include "memory/memory_index.h"
+#include "memory/memory_model.h"
+#include "memory/memory_worker.h"
 #include "memory/session_mgr.h"
 #include "gateway/ws_server.h"
 #include "cli/serial_cli.h"
@@ -101,6 +104,7 @@ void app_main(void)
     /* Initialize subsystems */
     ESP_ERROR_CHECK(message_bus_init());
     ESP_ERROR_CHECK(memory_store_init());
+    ESP_ERROR_CHECK(memory_index_init());
     ESP_ERROR_CHECK(skill_loader_init());
     ESP_ERROR_CHECK(session_mgr_init());
     ESP_ERROR_CHECK(wifi_manager_init());
@@ -108,6 +112,8 @@ void app_main(void)
     ESP_ERROR_CHECK(feishu_bot_init());
     ESP_ERROR_CHECK(relay_client_init());
     ESP_ERROR_CHECK(llm_proxy_init());
+    ESP_ERROR_CHECK(memory_model_init());
+    ESP_ERROR_CHECK(memory_worker_init());
     ESP_ERROR_CHECK(tool_registry_init());
     ESP_ERROR_CHECK(cron_service_init());
     ESP_ERROR_CHECK(heartbeat_init());
@@ -153,6 +159,7 @@ void app_main(void)
 
         /* Start network-dependent services */
         ESP_ERROR_CHECK(agent_loop_start());
+        ESP_ERROR_CHECK(memory_worker_start());
         ESP_ERROR_CHECK(feishu_bot_start());
         ESP_ERROR_CHECK(relay_client_start());
         cron_service_start();

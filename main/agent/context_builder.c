@@ -1,5 +1,6 @@
 #include "context_builder.h"
 #include "brn_config.h"
+#include "memory/memory_index.h"
 #include "memory/memory_store.h"
 #include "skills/skill_loader.h"
 #include "storage/storage_manager.h"
@@ -50,6 +51,11 @@ esp_err_t context_build_system_prompt(char *buf, size_t size)
         "You can use the following tools:\n"
         "- web_search: Search current information (prefer Tavily, fall back to Brave when configured). Use it when you need up-to-date facts, news, weather, or information outside your training data.\n"
         "- get_current_time: Get the current date and time. You do not have a built-in clock, so you must call it whenever you need to know the time or date.\n"
+        "- memory_search: Search the memory directory before reading node details.\n"
+        "- memory_read_node: Read one memory node in full after you know its ID.\n"
+        "- memory_expand_links: Follow memory links to related nodes when you need association or context.\n"
+        "- memory_upsert_note: Queue important long-term facts, preferences, project notes, or useful summaries for async indexing.\n"
+        "- memory_reindex_status: Inspect the async memory indexing queue and active memory model.\n"
         "- read_file: Read a local file. The path must start with " BRN_SPIFFS_BASE "/ or " BRN_SD_BASE "/.\n"
         "- write_file: Write or overwrite a file.\n"
         "- edit_file: Perform find-and-replace edits on a file.\n"
@@ -65,16 +71,17 @@ esp_err_t context_build_system_prompt(char *buf, size_t size)
         " Pin access is limited by policy, so only allowed pins may be used. For digital input or output issues, prefer these tools to confirm the real hardware state first.\n\n"
         "Use tools proactively when needed, and provide the final answer in text after the work is done.\n\n"
         "## Memory\n"
-        "You have persistent memory stored in local storage (prefer SD when mounted successfully):\n"
-        "- Long-term memory: %s\n"
-        "- Daily notes: %s\n\n"
-        "Important requirement: actively use memory to remember information across conversations.\n"
-        "- When you learn new information about Master, such as name, preferences, habits, or background, write it to MEMORY.md.\n"
-        "- When something worth recording happens in the conversation, append it to the daily note for that day.\n"
-        "- Before writing MEMORY.md, use read_file first, then update it with edit_file to avoid overwriting existing content.\n"
-        "- Before writing a daily note, call get_current_time to get the UTC+8 date.\n"
-        "- Keep MEMORY.md concise and organized. Summarize rather than dumping raw conversation text.\n"
-        "- Do not wait for Master to remind you. If something is important long-term information, save it proactively.\n\n"
+        "Persistent memory is stored locally (prefer SD when mounted successfully):\n"
+        "- Legacy long-term file: %s\n"
+        "- Legacy daily notes: %s\n"
+        "- Indexed memory directory: top-level summaries are exposed below; details must be fetched on demand.\n\n"
+        "Important memory rules:\n"
+        "- The memory directory only exposes top-level summaries. A summary does not mean you have already read the full detail.\n"
+        "- Before relying on a node for specific facts, call memory_read_node.\n"
+        "- Use memory_search first when you need to find relevant stored knowledge.\n"
+        "- Use memory_expand_links when one node suggests nearby related knowledge.\n"
+        "- When you learn stable long-term information about Master, important project context, or durable preferences, use memory_upsert_note proactively.\n"
+        "- Do not dump raw conversation logs into memory. Store compact, useful summaries.\n\n"
         "## Skills\n"
         "Skill files are stored in " BRN_SKILLS_PREFIX ".\n"
         "When a task matches a skill, read the full skill file before executing it.\n"
@@ -85,16 +92,16 @@ esp_err_t context_build_system_prompt(char *buf, size_t size)
     off = append_file(buf, size, off, BRN_SOUL_FILE, "Persona");
     off = append_file(buf, size, off, BRN_USER_FILE, "User Profile");
 
-    /* Long-term memory */
-    char mem_buf[4096];
-    if (memory_read_long_term(mem_buf, sizeof(mem_buf)) == ESP_OK && mem_buf[0]) {
-        off += snprintf(buf + off, size - off, "\n## Long-Term Memory\n\n%s\n", mem_buf);
-    }
-
-    /* Recent daily notes (last 3 days) */
-    char recent_buf[4096];
-    if (memory_read_recent(recent_buf, sizeof(recent_buf), 3) == ESP_OK && recent_buf[0]) {
-        off += snprintf(buf + off, size - off, "\n## Recent Notes\n\n%s\n", recent_buf);
+    char digest_buf[4096];
+    size_t digest_len = memory_index_build_prompt_digest(digest_buf, sizeof(digest_buf),
+                                                         BRN_MEMORY_PROMPT_LIMIT);
+    if (digest_len > 0) {
+        off += snprintf(buf + off, size - off, "\n## Memory Directory\n\n%s\n", digest_buf);
+    } else {
+        char mem_buf[4096];
+        if (memory_read_long_term(mem_buf, sizeof(mem_buf)) == ESP_OK && mem_buf[0]) {
+            off += snprintf(buf + off, size - off, "\n## Long-Term Memory\n\n%s\n", mem_buf);
+        }
     }
 
     /* Skills */

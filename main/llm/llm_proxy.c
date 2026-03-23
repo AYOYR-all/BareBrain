@@ -863,3 +863,18 @@ esp_err_t llm_set_base_url(const char *base_url)
     ESP_LOGI(TAG, "Base URL set to: %s", s_base_url);
     return ESP_OK;
 }
+
+void llm_get_config(char *api_key,
+                    size_t api_key_size,
+                    char *model,
+                    size_t model_size,
+                    char *provider,
+                    size_t provider_size,
+                    char *base_url,
+                    size_t base_url_size)
+{
+    safe_copy(api_key, api_key_size, s_api_key);
+    safe_copy(model, model_size, s_model);
+    safe_copy(provider, provider_size, s_provider);
+    safe_copy(base_url, base_url_size, s_base_url);
+}
