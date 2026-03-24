@@ -6,3 +6,9 @@ CONFIG_LWIP_LOCAL_HOSTNAME="barebrain"
 
 # SPIFFS: increase max filename length (default 32 is too short for session files)
 CONFIG_SPIFFS_OBJ_NAME_LEN=64
+
+# Favor release-sized builds over debug defaults.
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+
+# Keep runtime logging focused on warnings/errors by default.
+CONFIG_LOG_DEFAULT_LEVEL_WARN=y

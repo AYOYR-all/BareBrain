@@ -199,7 +199,7 @@ static esp_err_t cron_save_jobs(void)
 
     cJSON_AddItemToObject(root, "jobs", jobs_arr);
 
-    char *json_str = cJSON_Print(root);
+    char *json_str = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
 
     if (!json_str) {

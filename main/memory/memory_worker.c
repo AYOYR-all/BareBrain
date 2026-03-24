@@ -23,8 +23,18 @@ static brn_memory_reindex_status_t s_status = {0};
 
 static void copy_text(char *dst, size_t size, const char *src)
 {
-    if (!dst || size == 0) return;
-    snprintf(dst, size, "%s", src ? src : "");
+    if (!dst || size == 0) {
+        return;
+    }
+
+    if (!src) {
+        dst[0] = '\0';
+        return;
+    }
+
+    size_t len = strnlen(src, size - 1);
+    memcpy(dst, src, len);
+    dst[len] = '\0';
 }
 
 static esp_err_t write_text_file(const char *path, const char *text)
