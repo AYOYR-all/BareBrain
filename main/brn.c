@@ -12,7 +12,6 @@
 #include "bus/message_bus.h"
 #include "wifi/wifi_manager.h"
 #include "channels/feishu/feishu_bot.h"
-#include "channels/relay/relay_client.h"
 #include "llm/llm_proxy.h"
 #include "agent/agent_loop.h"
 #include "memory/memory_store.h"
@@ -69,11 +68,6 @@ static void outbound_dispatch_task(void *arg)
             } else {
                 ESP_LOGI(TAG, "Feishu send success for %s (%d bytes)", msg.chat_id, (int)strlen(msg.content));
             }
-        } else if (strcmp(msg.channel, BRN_CHAN_RELAY) == 0) {
-            esp_err_t relay_err = relay_client_send_message(msg.chat_id, msg.content);
-            if (relay_err != ESP_OK) {
-                ESP_LOGW(TAG, "Relay send failed for %s: %s", msg.chat_id, esp_err_to_name(relay_err));
-            }
         } else if (strcmp(msg.channel, BRN_CHAN_WEBSOCKET) == 0) {
             esp_err_t ws_err = ws_server_send(msg.chat_id, msg.content);
             if (ws_err != ESP_OK) {
@@ -121,7 +115,6 @@ void app_main(void)
     ESP_ERROR_CHECK(wifi_manager_init());
     ESP_ERROR_CHECK(http_proxy_init());
     ESP_ERROR_CHECK(feishu_bot_init());
-    ESP_ERROR_CHECK(relay_client_init());
     ESP_ERROR_CHECK(llm_proxy_init());
     ESP_ERROR_CHECK(memory_model_init());
     ESP_ERROR_CHECK(memory_worker_init());
@@ -178,7 +171,6 @@ void app_main(void)
         ESP_ERROR_CHECK(agent_loop_start());
         ESP_ERROR_CHECK(memory_worker_start());
         ESP_ERROR_CHECK(feishu_bot_start());
-        ESP_ERROR_CHECK(relay_client_start());
         cron_service_start();
         heartbeat_start();
         ESP_ERROR_CHECK(ws_server_start());

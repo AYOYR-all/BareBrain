@@ -6,7 +6,6 @@
 
 /* Channel identifiers */
 #define BRN_CHAN_FEISHU     "feishu"
-#define BRN_CHAN_RELAY      "relay"
 #define BRN_CHAN_WEBSOCKET  "websocket"
 #define BRN_CHAN_CLI        "cli"
 #define BRN_CHAN_SYSTEM     "system"

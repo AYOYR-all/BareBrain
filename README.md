@@ -29,7 +29,6 @@ You send a message from ClawApp over the local WebSocket gateway, or from Feishu
 - An **ESP32-S3 dev board** with 16 MB flash and 8 MB PSRAM (e.g. Xiaozhi AI board, ~$10)
 - A **USB Type-C cable**
 - `ClawApp` on the same LAN as the board if you want the local WebSocket chat path
-- A public relay server if you want the board to stay reachable outside your LAN
 - A **Feishu/Lark app ID + app secret** only if you also want the optional Feishu/Lark channel
 - An **Anthropic API key** — from [console.anthropic.com](https://console.anthropic.com), or an **OpenAI API key** — from [platform.openai.com](https://platform.openai.com)
 
@@ -162,8 +161,6 @@ Connect via serial to configure or debug. **Config commands** let you change set
 brn> wifi_set MySSID MyPassword   # change WiFi network
 brn> set_feishu_creds cli_xxx secret_xxx   # change Feishu/Lark app credentials
 brn> feishu_send ou_xxx "hello"            # send a Feishu test message
-brn> set_relay wss://relay.example.com/ws demo-board board-secret
-brn> clear_relay                           # remove relay config
 brn> set_api_key sk-ant-api03-... # change API key (Anthropic or OpenAI)
 brn> set_model_provider openai    # switch provider (anthropic|openai)
 brn> set_model gpt-4o             # change LLM model
@@ -331,7 +328,6 @@ This turns BareBrain into a proactive assistant — write tasks to `HEARTBEAT.md
 
 - **WebSocket gateway** on port 18789 — connect from your LAN with any WebSocket client
 - **SD card storage** — tries to mount on boot; indexed memory lives on `/sdcard`, and sessions/docs keep using it when available
-- **Optional relay client** — keep an outbound WebSocket connection to a public relay server
 - **OTA updates** — flash new firmware over WiFi, no USB needed
 - **Dual-core** — network I/O and AI processing run on separate CPU cores
 - **HTTP proxy** — CONNECT tunnel support for restricted networks

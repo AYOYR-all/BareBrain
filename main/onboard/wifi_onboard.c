@@ -227,9 +227,6 @@ static esp_err_t http_get_config(httpd_req_t *req)
     json_add_effective_config(root, "memory_base_url", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_BASE_URL, BRN_SECRET_MEMORY_BASE_URL);
     json_add_effective_config(root, "feishu_app_id", BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_ID, BRN_SECRET_FEISHU_APP_ID);
     json_add_effective_config(root, "feishu_app_secret", BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_SECRET, BRN_SECRET_FEISHU_APP_SECRET);
-    json_add_effective_config(root, "relay_url", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_URL, BRN_SECRET_RELAY_URL);
-    json_add_effective_config(root, "relay_device_id", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_ID, BRN_SECRET_RELAY_DEVICE_ID);
-    json_add_effective_config(root, "relay_device_secret", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_SECRET, BRN_SECRET_RELAY_DEVICE_SECRET);
     json_add_effective_config(root, "proxy_host", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_HOST, BRN_SECRET_PROXY_HOST);
     json_add_effective_config_u16(root, "proxy_port", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_PORT, BRN_SECRET_PROXY_PORT);
     json_add_effective_config(root, "proxy_type", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_TYPE, BRN_SECRET_PROXY_TYPE);
@@ -359,11 +356,6 @@ static esp_err_t http_post_save(httpd_req_t *req)
     /* Feishu */
     nvs_sync_field(root, "feishu_app_id",     BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_ID);
     nvs_sync_field(root, "feishu_app_secret", BRN_NVS_FEISHU, BRN_NVS_KEY_FEISHU_APP_SECRET);
-
-    /* Relay */
-    nvs_sync_field(root, "relay_url", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_URL);
-    nvs_sync_field(root, "relay_device_id", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_ID);
-    nvs_sync_field(root, "relay_device_secret", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_SECRET);
 
     /* Proxy */
     nvs_sync_field(root, "proxy_host", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_HOST);

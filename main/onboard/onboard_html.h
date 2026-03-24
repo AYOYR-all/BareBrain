@@ -39,7 +39,6 @@ static const char ONBOARD_HTML[] =
 "<div class='card'>"
 "<div class='card-body'>"
 "<div class='hint'><strong>Primary path:</strong> connect BRN to WiFi here, then open ClawApp and add the board's LAN IP.</div>"
-"<div class='hint'><strong>Public relay is optional:</strong> fill the relay section below if you want the board to call out to a public server for remote chat.</div>"
 "<div class='hint'><strong>Feishu is optional:</strong> if you only use ClawApp over WebSocket, leave the Feishu fields empty.</div>"
 "</div></div>"
 
@@ -102,19 +101,6 @@ static const char ONBOARD_HTML[] =
 "<input id='feishu_app_secret' type='password' placeholder='App Secret'>"
 "</div></div>"
 
-/* Relay section */
-"<div class='card collapsed' id='sec-relay'>"
-"<div class='card-hdr' onclick='toggle(this)'>Relay (Optional)</div>"
-"<div class='card-body'>"
-"<div class='hint'>Use this only when BRN should keep an outbound WebSocket connection to a public relay.</div>"
-"<label>Relay URL</label>"
-"<input id='relay_url' placeholder='wss://relay.example.com/ws'>"
-"<label>Device ID</label>"
-"<input id='relay_device_id' placeholder='demo-board'>"
-"<label>Device Secret</label>"
-"<input id='relay_device_secret' type='password' placeholder='board-secret'>"
-"</div></div>"
-
 /* Proxy section */
 "<div class='card collapsed' id='sec-proxy'>"
 "<div class='card-hdr' onclick='toggle(this)'>Proxy</div>"
@@ -171,7 +157,7 @@ static const char ONBOARD_HTML[] =
 "function save(){"
 "var fields=['ssid','password','api_key','model','provider','base_url',"
 "'memory_api_key','memory_model','memory_provider','memory_base_url',"
-"'feishu_app_id','feishu_app_secret','relay_url','relay_device_id','relay_device_secret',"
+"'feishu_app_id','feishu_app_secret',"
 "'proxy_host','proxy_port','proxy_type','search_key','tavily_key'];"
 "var data={};"
 "fields.forEach(f=>{data[f]=document.getElementById(f).value.trim()});"

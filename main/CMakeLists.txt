@@ -4,8 +4,6 @@ idf_component_register(
         "bus/message_bus.c"
         "wifi/wifi_manager.c"
         "channels/feishu/feishu_bot.c"
-        "channels/relay/relay_config.c"
-        "channels/relay/relay_client.c"
         "llm/llm_endpoint.c"
         "llm/llm_proxy.c"
         "agent/agent_loop.c"

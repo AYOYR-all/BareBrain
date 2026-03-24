@@ -2,7 +2,6 @@
 #include "brn_config.h"
 #include "wifi/wifi_manager.h"
 #include "channels/feishu/feishu_bot.h"
-#include "channels/relay/relay_client.h"
 #include "llm/llm_proxy.h"
 #include "memory/memory_model.h"
 #include "memory/memory_worker.h"
@@ -299,14 +298,6 @@ static struct {
     struct arg_end *end;
 } proxy_args;
 
-/* --- set_relay command --- */
-static struct {
-    struct arg_str *url;
-    struct arg_str *device_id;
-    struct arg_str *device_secret;
-    struct arg_end *end;
-} relay_args;
-
 static int cmd_set_proxy(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **)&proxy_args);
@@ -359,36 +350,6 @@ static int cmd_storage_status(int argc, char **argv)
         storage_print_sd_info(stdout);
     }
     return 0;
-}
-
-static int cmd_set_relay(int argc, char **argv)
-{
-    int nerrors = arg_parse(argc, argv, (void **)&relay_args);
-    if (nerrors != 0) {
-        arg_print_errors(stderr, relay_args.end, argv[0]);
-        return 1;
-    }
-
-    esp_err_t err = relay_client_set_config(
-        relay_args.url->sval[0],
-        relay_args.device_id->sval[0],
-        relay_args.device_secret->sval[0]
-    );
-    printf("set_relay status: %s\n", esp_err_to_name(err));
-    if (err == ESP_OK) {
-        printf("Relay saved. Restart to apply.\n");
-    }
-    return err == ESP_OK ? 0 : 1;
-}
-
-static int cmd_clear_relay(int argc, char **argv)
-{
-    esp_err_t err = relay_client_clear_config();
-    printf("clear_relay status: %s\n", esp_err_to_name(err));
-    if (err == ESP_OK) {
-        printf("Relay config cleared. Restart to apply.\n");
-    }
-    return err == ESP_OK ? 0 : 1;
 }
 
 /* --- set_search_key command --- */
@@ -680,11 +641,6 @@ static int cmd_config_show(int argc, char **argv)
     print_config("Mem Model",   BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_MODEL, BRN_SECRET_MEMORY_MODEL, false);
     print_config("Mem Provider", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_PROVIDER, BRN_SECRET_MEMORY_PROVIDER, false);
     print_config("Mem Base URL", BRN_NVS_MEMORY_LLM, BRN_NVS_KEY_MEMORY_BASE_URL, BRN_SECRET_MEMORY_BASE_URL, false);
-    print_config("Relay URL",  BRN_NVS_RELAY,  BRN_NVS_KEY_RELAY_URL, BRN_SECRET_RELAY_URL, false);
-    print_config("Relay Device", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_ID,
-                 BRN_SECRET_RELAY_DEVICE_ID, false);
-    print_config("Relay Secret", BRN_NVS_RELAY, BRN_NVS_KEY_RELAY_DEVICE_SECRET,
-                 BRN_SECRET_RELAY_DEVICE_SECRET, true);
     print_config("Proxy Host", BRN_NVS_PROXY,  BRN_NVS_KEY_PROXY_HOST, BRN_SECRET_PROXY_HOST, false);
     print_config_u16("Proxy Port", BRN_NVS_PROXY, BRN_NVS_KEY_PROXY_PORT, BRN_SECRET_PROXY_PORT);
     print_config("Search Key", BRN_NVS_SEARCH, BRN_NVS_KEY_API_KEY,  BRN_SECRET_SEARCH_KEY, true);
@@ -700,7 +656,7 @@ static int cmd_config_reset(int argc, char **argv)
     (void)argv;
     const char *namespaces[] = {
         BRN_NVS_WIFI, BRN_NVS_FEISHU, BRN_NVS_LLM, BRN_NVS_MEMORY_LLM,
-        BRN_NVS_RELAY, BRN_NVS_PROXY, BRN_NVS_SEARCH
+        BRN_NVS_PROXY, BRN_NVS_SEARCH
     };
     const size_t namespace_count = sizeof(namespaces) / sizeof(namespaces[0]);
     for (size_t i = 0; i < namespace_count; i++) {
@@ -1058,7 +1014,7 @@ static void register_search_console_commands(void)
         &web_search_args));
 }
 
-static void register_proxy_relay_console_commands(void)
+static void register_proxy_console_commands(void)
 {
     proxy_args.host = arg_str1(NULL, NULL, "<host>", "Proxy host/IP");
     proxy_args.port = arg_int1(NULL, NULL, "<port>", "Proxy port");
@@ -1074,22 +1030,6 @@ static void register_proxy_relay_console_commands(void)
         "clear_proxy",
         "Remove proxy configuration",
         &cmd_clear_proxy,
-        NULL));
-
-    relay_args.url = arg_str1(NULL, NULL, "<url>", "Relay WebSocket URL");
-    relay_args.device_id = arg_str1(NULL, NULL, "<device_id>", "Relay device ID");
-    relay_args.device_secret = arg_str1(NULL, NULL, "<device_secret>", "Relay device secret");
-    relay_args.end = arg_end(3);
-    ESP_ERROR_CHECK(register_cli_command(
-        "set_relay",
-        "Set relay config: set_relay <url> <device_id> <device_secret>",
-        &cmd_set_relay,
-        &relay_args));
-
-    ESP_ERROR_CHECK(register_cli_command(
-        "clear_relay",
-        "Remove relay configuration",
-        &cmd_clear_relay,
         NULL));
 }
 
@@ -1221,7 +1161,7 @@ esp_err_t serial_cli_init(void)
     register_llm_console_commands();
     register_memory_model_console_commands();
     register_search_console_commands();
-    register_proxy_relay_console_commands();
+    register_proxy_console_commands();
     register_skill_console_commands();
     register_session_console_commands();
     register_maintenance_console_commands();

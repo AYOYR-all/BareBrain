@@ -37,15 +37,6 @@
 #ifndef BRN_SECRET_SEARCH_KEY
 #define BRN_SECRET_SEARCH_KEY      ""
 #endif
-#ifndef BRN_SECRET_RELAY_URL
-#define BRN_SECRET_RELAY_URL       ""
-#endif
-#ifndef BRN_SECRET_RELAY_DEVICE_ID
-#define BRN_SECRET_RELAY_DEVICE_ID ""
-#endif
-#ifndef BRN_SECRET_RELAY_DEVICE_SECRET
-#define BRN_SECRET_RELAY_DEVICE_SECRET ""
-#endif
 #ifndef BRN_SECRET_FEISHU_APP_ID
 #define BRN_SECRET_FEISHU_APP_ID   ""
 #endif
@@ -81,11 +72,6 @@
 #define BRN_FEISHU_WEBHOOK_PORT         18790
 #define BRN_FEISHU_WEBHOOK_PATH         "/feishu/events"
 #define BRN_FEISHU_WEBHOOK_MAX_BODY     (16 * 1024)
-
-/* Relay */
-#define BRN_RELAY_STACK             (10 * 1024)
-#define BRN_RELAY_RECONNECT_MS      5000
-#define BRN_RELAY_NETWORK_TIMEOUT_MS 10000
 
 /* Agent Loop */
 #define BRN_AGENT_STACK             (24 * 1024)
@@ -189,7 +175,6 @@
 #define BRN_NVS_WIFI                "wifi_config"
 #define BRN_NVS_FEISHU              "feishu_config"
 #define BRN_NVS_LLM                 "llm_config"
-#define BRN_NVS_RELAY               "relay_config"
 #define BRN_NVS_PROXY               "proxy_config"
 #define BRN_NVS_SEARCH              "search_config"
 #define BRN_NVS_MEMORY_LLM          "memory_llm"
@@ -204,9 +189,6 @@
 #define BRN_NVS_KEY_MODEL           "model"
 #define BRN_NVS_KEY_PROVIDER        "provider"
 #define BRN_NVS_KEY_BASE_URL        "base_url"
-#define BRN_NVS_KEY_RELAY_URL       "url"
-#define BRN_NVS_KEY_RELAY_DEVICE_ID "device_id"
-#define BRN_NVS_KEY_RELAY_DEVICE_SECRET "device_secret"
 #define BRN_NVS_KEY_PROXY_HOST      "host"
 #define BRN_NVS_KEY_PROXY_PORT      "port"
 #define BRN_NVS_KEY_PROXY_TYPE      "proxy_type"
