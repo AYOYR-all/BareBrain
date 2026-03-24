@@ -757,10 +757,6 @@ static void handle_message_event(cJSON *event)
         }
     }
 
-    ESP_LOGI(TAG, "Message from %s in %s(%s): %.60s%s",
-             sender_id, chat_id, chat_type, cleaned,
-             strlen(cleaned) > 60 ? "..." : "");
-
     /* For p2p (DM) chats, use sender open_id as chat_id for session routing.
      * For group chats, use the chat_id (group ID).
      * This matches the moltbot reference pattern where DMs route by sender. */
@@ -768,6 +764,13 @@ static void handle_message_event(cJSON *event)
     if (strcmp(chat_type, "p2p") == 0 && sender_id[0]) {
         route_id = sender_id;
     }
+
+    ESP_LOGI(TAG, "Message from %s in %s(%s), routed as %s (%u bytes)",
+             sender_id[0] ? sender_id : "(unknown)",
+             chat_id,
+             chat_type,
+             route_id,
+             (unsigned)strlen(cleaned));
 
     /* Push to inbound message bus */
     brn_msg_t msg = {0};
@@ -901,9 +904,8 @@ esp_err_t feishu_send_message(const char *chat_id, const char *text)
                 if (root) {
                     cJSON *code = cJSON_GetObjectItem(root, "code");
                     if (code && code->valueint != 0) {
-                        cJSON *msg = cJSON_GetObjectItem(root, "msg");
-                        ESP_LOGW(TAG, "Send failed: code=%d, msg=%s",
-                                 code->valueint, msg ? msg->valuestring : "unknown");
+                        ESP_LOGW(TAG, "Send failed to %s: code=%d (%d bytes)",
+                                 chat_id, code->valueint, (int)chunk);
                         all_ok = 0;
                     } else {
                         ESP_LOGI(TAG, "Sent to %s (%d bytes)", chat_id, (int)chunk);
@@ -958,9 +960,10 @@ esp_err_t feishu_reply_message(const char *message_id, const char *text)
             if (code && code->valueint == 0) {
                 ret = ESP_OK;
             } else {
-                cJSON *msg = cJSON_GetObjectItem(root, "msg");
-                ESP_LOGW(TAG, "Reply failed: code=%d, msg=%s",
-                         code ? code->valueint : -1, msg ? msg->valuestring : "unknown");
+                ESP_LOGW(TAG, "Reply failed for %s: code=%d (%u bytes)",
+                         message_id,
+                         code ? code->valueint : -1,
+                         (unsigned)strlen(text));
             }
             cJSON_Delete(root);
         }

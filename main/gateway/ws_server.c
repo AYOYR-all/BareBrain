@@ -103,7 +103,7 @@ static esp_err_t ws_handler(httpd_req_t *req)
     free(ws_pkt.payload);
 
     if (!root) {
-        ESP_LOGW(TAG, "Invalid JSON from fd=%d", fd);
+        ESP_LOGW(TAG, "Invalid JSON from fd=%d (%u bytes)", fd, (unsigned)ws_pkt.len);
         return ESP_OK;
     }
 
@@ -124,7 +124,8 @@ static esp_err_t ws_handler(httpd_req_t *req)
             }
         }
 
-        ESP_LOGI(TAG, "WS message from %s: %.40s...", chat_id, content->valuestring);
+        ESP_LOGI(TAG, "WS message from %s (%u bytes)",
+                 chat_id, (unsigned)strlen(content->valuestring));
 
         /* Push to inbound bus */
         brn_msg_t msg = {0};

@@ -74,7 +74,8 @@ static void handle_inbound_message(cJSON *root)
         const char *message = cJSON_GetStringValue(
             cJSON_GetObjectItem(root, "message")
         );
-        ESP_LOGW(TAG, "Relay error: %s", message ? message : "(empty)");
+        ESP_LOGW(TAG, "Relay error frame (message_len=%u)",
+                 (unsigned)(message ? strlen(message) : 0));
         return;
     }
 
@@ -105,7 +106,7 @@ static void process_text_frame(const uint8_t *data, size_t len)
 {
     cJSON *root = cJSON_ParseWithLength((const char *)data, len);
     if (!root) {
-        ESP_LOGW(TAG, "Invalid relay JSON frame");
+        ESP_LOGW(TAG, "Invalid relay JSON frame (%u bytes)", (unsigned)len);
         return;
     }
     handle_inbound_message(root);
