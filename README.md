@@ -187,6 +187,7 @@ Leave `BRN_SECRET_BASE_URL` empty to use the official provider endpoint. To use 
 ```
 brn> wifi_status              # am I connected?
 brn> tool_exec memory_search "{\"query\":\"project\"}"   # search indexed memory
+brn> tool_exec memory_delete_node "{\"node_id\":\"mem_1234abcd\"}"  # delete one memory node
 brn> tool_exec memory_reindex_status                    # inspect the async queue
 brn> heap_info                # how much RAM is free?
 brn> storage_status           # show SPIFFS / SD mount status and active data path
@@ -305,6 +306,7 @@ BareBrain supports tool calling for both Anthropic and OpenAI — the LLM can ca
 | `memory_search` | Search indexed memory summaries before reading details |
 | `memory_read_node` | Read one indexed memory node in full |
 | `memory_expand_links` | Follow related memory links from one node |
+| `memory_delete_node` | Permanently delete one indexed memory node by ID |
 | `memory_upsert_note` | Queue a memory note for async indexing |
 | `memory_reindex_status` | Inspect the async indexing queue and memory-model status |
 | `cron_add` | Schedule a recurring or one-shot task (the LLM creates cron jobs on its own) |

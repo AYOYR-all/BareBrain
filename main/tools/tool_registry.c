@@ -252,6 +252,17 @@ esp_err_t tool_registry_init(void)
     };
     register_tool(&ml);
 
+    brn_tool_t md = {
+        .name = "memory_delete_node",
+        .description = "Hard-delete one indexed memory node by ID, including its detail and metadata files.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{\"node_id\":{\"type\":\"string\",\"description\":\"Memory node ID\"}},"
+            "\"required\":[\"node_id\"]}",
+        .execute = tool_memory_delete_node_execute,
+    };
+    register_tool(&md);
+
     brn_tool_t mu = {
         .name = "memory_upsert_note",
         .description = "Queue a memory note for async indexing into the memory graph.",

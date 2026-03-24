@@ -39,5 +39,6 @@ esp_err_t memory_index_expand_links(const char *node_id,
                                     int limit,
                                     char *output,
                                     size_t output_size);
+esp_err_t memory_index_delete_node(const char *node_id, brn_memory_node_t *deleted_node);
 esp_err_t memory_index_upsert(const brn_memory_node_t *node);
 void memory_index_get_stats(brn_memory_index_stats_t *stats);

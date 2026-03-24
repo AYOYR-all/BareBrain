@@ -11,3 +11,4 @@ esp_err_t memory_store_get_node_path(const char *node_id, char *buf, size_t size
 esp_err_t memory_store_get_meta_path(const char *node_id, char *buf, size_t size);
 esp_err_t memory_store_get_inbox_dir(char *buf, size_t size);
 esp_err_t memory_store_get_failed_dir(char *buf, size_t size);
+esp_err_t memory_store_delete_node_files(const char *node_id);

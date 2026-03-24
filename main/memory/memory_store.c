@@ -3,7 +3,9 @@
 #include "storage/storage_fs.h"
 #include "storage/storage_manager.h"
 
+#include <errno.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include "esp_log.h"
 
 static const char *TAG = "memory";
@@ -31,6 +33,20 @@ static void memory_inbox_dir(char *buf, size_t size)
 static void memory_failed_dir(char *buf, size_t size)
 {
     snprintf(buf, size, BRN_SD_BASE "/memory/failed");
+}
+
+static esp_err_t require_regular_file(const char *path)
+{
+    struct stat st = {0};
+    if (stat(path, &st) != 0) return ESP_ERR_NOT_FOUND;
+    return S_ISREG(st.st_mode) ? ESP_OK : ESP_FAIL;
+}
+
+static esp_err_t remove_required_file(const char *path)
+{
+    if (remove(path) == 0) return ESP_OK;
+    ESP_LOGE(TAG, "Failed to delete %s: errno=%d", path, errno);
+    return errno == ENOENT ? ESP_ERR_NOT_FOUND : ESP_FAIL;
 }
 
 esp_err_t memory_store_init(void)
@@ -100,4 +116,18 @@ esp_err_t memory_store_get_failed_dir(char *buf, size_t size)
     }
     memory_failed_dir(buf, size);
     return ESP_OK;
+}
+
+esp_err_t memory_store_delete_node_files(const char *node_id)
+{
+    char node_path[BRN_MEMORY_PATH_LEN];
+    char meta_path[BRN_MEMORY_PATH_LEN];
+    if (!node_id || !node_id[0]) return ESP_ERR_INVALID_ARG;
+    if (!storage_sd_is_mounted()) return ESP_ERR_INVALID_STATE;
+    memory_node_path(node_id, node_path, sizeof(node_path));
+    memory_meta_path(node_id, meta_path, sizeof(meta_path));
+    if (require_regular_file(node_path) != ESP_OK) return ESP_ERR_NOT_FOUND;
+    if (require_regular_file(meta_path) != ESP_OK) return ESP_ERR_NOT_FOUND;
+    if (remove_required_file(node_path) != ESP_OK) return ESP_FAIL;
+    return remove_required_file(meta_path);
 }

@@ -202,6 +202,7 @@ brn> config_reset                 # 清除 NVS，恢复编译时默认值
 ```
 brn> wifi_status              # 连上了吗？
 brn> tool_exec memory_search "{\"query\":\"project\"}"   # 搜索索引记忆
+brn> tool_exec memory_delete_node "{\"node_id\":\"mem_1234abcd\"}"  # 删除一条记忆节点
 brn> tool_exec memory_reindex_status                    # 查看异步建库状态
 brn> heap_info                # 还剩多少内存？
 brn> storage_status           # 查看 SPIFFS / SD 挂载状态和当前数据路径
@@ -320,6 +321,7 @@ BareBrain 同时支持 Anthropic 和 OpenAI 的工具调用 — LLM 在对话中
 | `memory_search` | 先搜索索引记忆摘要，再决定读详情 |
 | `memory_read_node` | 读取单个记忆节点全文 |
 | `memory_expand_links` | 顺着关联边查看相关节点 |
+| `memory_delete_node` | 按 ID 永久删除一条索引记忆节点 |
 | `memory_upsert_note` | 提交一条记忆素材，进入异步建库队列 |
 | `memory_reindex_status` | 查看异步建库队列和记忆模型状态 |
 | `cron_add` | 创建定时或一次性任务（LLM 自主创建 cron 任务） |

@@ -2,8 +2,10 @@
 
 #include "brn_config.h"
 #include "memory/memory_index.h"
+#include "memory/memory_store.h"
 #include "memory/memory_worker.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,6 +28,18 @@ static int parse_limit(cJSON *root, int fallback)
 {
     cJSON *limit = cJSON_GetObjectItem(root, "limit");
     return cJSON_IsNumber(limit) && limit->valueint > 0 ? limit->valueint : fallback;
+}
+
+static void write_delete_error(char *output,
+                               size_t output_size,
+                               const char *node_id,
+                               bool files_deleted,
+                               esp_err_t err)
+{
+    const char *prefix = files_deleted
+        ? "Error: memory files deleted but index update failed"
+        : "Error: failed to delete memory node";
+    snprintf(output, output_size, "%s %s (%s)", prefix, node_id, esp_err_to_name(err));
 }
 
 esp_err_t tool_memory_search_execute(const char *input_json, char *output, size_t output_size)
@@ -67,6 +81,33 @@ esp_err_t tool_memory_expand_links_execute(const char *input_json, char *output,
                                               output, output_size);
     cJSON_Delete(root);
     return err;
+}
+
+esp_err_t tool_memory_delete_node_execute(const char *input_json, char *output, size_t output_size)
+{
+    cJSON *root = parse_root(input_json);
+    brn_memory_node_t deleted = {0};
+    bool files_deleted = false;
+    const char *node_id = cJSON_GetStringValue(cJSON_GetObjectItem(root, "node_id"));
+    if (!node_id || !node_id[0]) {
+        snprintf(output, output_size, "%s", REQ_NODE_ID);
+        cJSON_Delete(root);
+        return ESP_ERR_INVALID_ARG;
+    }
+    esp_err_t err = memory_index_get_node(node_id, &deleted);
+    if (err == ESP_OK) err = memory_store_delete_node_files(node_id);
+    if (err == ESP_OK) {
+        files_deleted = true;
+        err = memory_index_delete_node(node_id, NULL);
+    }
+    cJSON_Delete(root);
+    if (err != ESP_OK) {
+        write_delete_error(output, output_size, node_id, files_deleted, err);
+        return err;
+    }
+    snprintf(output, output_size, "OK: deleted memory node %s (%s | %s)",
+             deleted.id, deleted.kind, deleted.title);
+    return ESP_OK;
 }
 
 esp_err_t tool_memory_upsert_note_execute(const char *input_json, char *output, size_t output_size)

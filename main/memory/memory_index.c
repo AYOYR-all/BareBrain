@@ -160,7 +160,7 @@ static esp_err_t load_index_file(void)
     return ESP_OK;
 }
 
-static esp_err_t save_index_file(void)
+static esp_err_t save_index_state(const brn_memory_node_t *state_nodes, int state_count)
 {
     char path[BRN_MEMORY_PATH_LEN];
     char tmp_path[BRN_MEMORY_PATH_LEN + 8];
@@ -173,8 +173,8 @@ static esp_err_t save_index_file(void)
         cJSON_Delete(nodes);
         return ESP_ERR_NO_MEM;
     }
-    for (int i = 0; i < s_node_count; ++i) {
-        cJSON *obj = node_to_json(&s_nodes[i]);
+    for (int i = 0; i < state_count; ++i) {
+        cJSON *obj = node_to_json(&state_nodes[i]);
         if (obj) cJSON_AddItemToArray(nodes, obj);
     }
     cJSON_AddItemToObject(root, "nodes", nodes);
@@ -192,6 +192,11 @@ static esp_err_t save_index_file(void)
     remove(path);
     if (rename(tmp_path, path) != 0) return ESP_FAIL;
     return ESP_OK;
+}
+
+static esp_err_t save_index_file(void)
+{
+    return save_index_state(s_nodes, s_node_count);
 }
 
 static int node_score(const brn_memory_node_t *node, const char *query, const char *kind, const char *tag)
@@ -246,6 +251,37 @@ static size_t append_node_line(char *buf, size_t size, size_t off, const brn_mem
     int n = snprintf(buf + off, size - off, "- [%s] %s | %s\n  summary: %s\n",
                      node->id, node->kind, node->title, node->summary[0] ? node->summary : "(empty)");
     return (n > 0) ? off + (size_t)n : off;
+}
+
+static void remove_link_id(brn_memory_node_t *node, const char *deleted_id)
+{
+    int next = 0;
+    for (int i = 0; i < node->link_count; ++i) {
+        if (strcmp(node->link_ids[i], deleted_id) == 0) continue;
+        if (next != i) copy_text(node->link_ids[next], sizeof(node->link_ids[0]), node->link_ids[i]);
+        next++;
+    }
+    for (int i = next; i < BRN_MEMORY_MAX_LINKS; ++i) node->link_ids[i][0] = '\0';
+    node->link_count = next;
+}
+
+static int build_deleted_state(const char *node_id,
+                               brn_memory_node_t *deleted_node,
+                               brn_memory_node_t *next_nodes)
+{
+    int next_count = 0;
+    bool found = false;
+    for (int i = 0; i < s_node_count; ++i) {
+        if (strcmp(s_nodes[i].id, node_id) == 0) {
+            if (deleted_node) *deleted_node = s_nodes[i];
+            found = true;
+            continue;
+        }
+        next_nodes[next_count++] = s_nodes[i];
+    }
+    if (!found) return -1;
+    for (int i = 0; i < next_count; ++i) remove_link_id(&next_nodes[i], node_id);
+    return next_count;
 }
 
 esp_err_t memory_index_init(void)
@@ -380,6 +416,27 @@ esp_err_t memory_index_expand_links(const char *node_id, int limit, char *output
     }
     xSemaphoreGive(s_lock);
     return ESP_OK;
+}
+
+esp_err_t memory_index_delete_node(const char *node_id, brn_memory_node_t *deleted_node)
+{
+    esp_err_t err = ESP_OK;
+    brn_memory_node_t *next_nodes = NULL;
+    if (!node_id || !node_id[0]) return ESP_ERR_INVALID_ARG;
+    next_nodes = calloc(BRN_MEMORY_MAX_NODES, sizeof(brn_memory_node_t));
+    if (!next_nodes) return ESP_ERR_NO_MEM;
+    xSemaphoreTake(s_lock, portMAX_DELAY);
+    int next_count = build_deleted_state(node_id, deleted_node, next_nodes);
+    if (next_count < 0) err = ESP_ERR_NOT_FOUND;
+    if (err == ESP_OK) err = save_index_state(next_nodes, next_count);
+    if (err == ESP_OK) {
+        memset(s_nodes, 0, sizeof(s_nodes));
+        memcpy(s_nodes, next_nodes, sizeof(brn_memory_node_t) * (size_t)next_count);
+        s_node_count = next_count;
+    }
+    xSemaphoreGive(s_lock);
+    free(next_nodes);
+    return err;
 }
 
 esp_err_t memory_index_upsert(const brn_memory_node_t *node)
