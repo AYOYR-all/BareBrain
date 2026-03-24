@@ -137,6 +137,20 @@ static esp_err_t walk_sd_dir(const char *dir_path,
     return ESP_OK;
 }
 
+static esp_err_t walk_sd_prefix(const char *prefix,
+                                char *output,
+                                size_t output_size,
+                                size_t *offset,
+                                int *count)
+{
+    struct stat st = {0};
+
+    if (prefix && stat(prefix, &st) == 0 && S_ISDIR(st.st_mode)) {
+        return walk_sd_dir(prefix, prefix, output, output_size, offset, count);
+    }
+    return walk_sd_dir(BRN_SD_BASE, prefix, output, output_size, offset, count);
+}
+
 bool storage_fs_is_spiffs_path(const char *path)
 {
     return path_has_root(path, BRN_SPIFFS_BASE, true);
@@ -224,7 +238,7 @@ esp_err_t storage_fs_list_paths(const char *prefix, char *output, size_t output_
         if (!storage_sd_is_mounted()) {
             return prefix ? ESP_ERR_INVALID_STATE : ESP_OK;
         }
-        ESP_RETURN_ON_ERROR(walk_sd_dir(BRN_SD_BASE, prefix, output, output_size, &offset, count), TAG,
+        ESP_RETURN_ON_ERROR(walk_sd_prefix(prefix, output, output_size, &offset, count), TAG,
                             "failed to list SD paths");
     }
 

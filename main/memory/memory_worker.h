@@ -8,6 +8,7 @@
 
 typedef struct {
     int pending_count;
+    int failed_count;
     int indexed_count;
     time_t last_success_ts;
     char last_error[160];

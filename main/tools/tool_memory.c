@@ -112,8 +112,8 @@ esp_err_t tool_memory_reindex_status_execute(const char *input_json, char *outpu
         strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", &tm);
     }
     snprintf(output, output_size,
-             "memory_reindex_status\npending: %d\nindexed: %d\nlast_success: %s\nactive_provider: %s\nactive_model: %s\nusing_fallback: %s\nlast_error: %s",
-             status.pending_count, status.indexed_count, ts,
+             "memory_reindex_status\npending: %d\nfailed: %d\nindexed: %d\nlast_success: %s\nactive_provider: %s\nactive_model: %s\nusing_fallback: %s\nlast_error: %s",
+             status.pending_count, status.failed_count, status.indexed_count, ts,
              status.active_provider[0] ? status.active_provider : "(unset)",
              status.active_model[0] ? status.active_model : "(unset)",
              status.using_fallback ? "yes" : "no",

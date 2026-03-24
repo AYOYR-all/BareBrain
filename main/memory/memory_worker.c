@@ -65,15 +65,23 @@ static esp_err_t write_text_file(const char *path, const char *text)
     return ESP_OK;
 }
 
-static void refresh_status_counts(void)
+static void refresh_count_for_dir(const char *prefix, int *value)
 {
-    char prefix[BRN_MEMORY_PATH_LEN];
     char listed[2048] = {0};
     int count = 0;
-    memory_store_get_inbox_dir(prefix, sizeof(prefix));
     if (storage_fs_list_paths(prefix, listed, sizeof(listed), &count) == ESP_OK) {
-        s_status.pending_count = count;
+        *value = count;
     }
+}
+
+static void refresh_status_counts(void)
+{
+    char inbox[BRN_MEMORY_PATH_LEN];
+    char failed[BRN_MEMORY_PATH_LEN];
+    memory_store_get_inbox_dir(inbox, sizeof(inbox));
+    memory_store_get_failed_dir(failed, sizeof(failed));
+    refresh_count_for_dir(inbox, &s_status.pending_count);
+    refresh_count_for_dir(failed, &s_status.failed_count);
     brn_memory_index_stats_t stats = {0};
     memory_index_get_stats(&stats);
     s_status.indexed_count = stats.total_nodes;
@@ -200,11 +208,13 @@ static void memory_worker_task(void *arg)
             vTaskDelay(pdMS_TO_TICKS(BRN_MEMORY_WORKER_INTERVAL_MS));
             continue;
         }
+        ESP_LOGI(TAG, "Processing memory inbox item: %s", path);
         esp_err_t err = process_one_item(path);
         if (err == ESP_OK) {
             s_status.last_error[0] = '\0';
             s_status.last_success_ts = time(NULL);
             remove(path);
+            ESP_LOGI(TAG, "Indexed memory inbox item: %s", path);
         } else {
             const char *name = strrchr(path, '/');
             snprintf(s_status.last_error, sizeof(s_status.last_error), "%s while processing %.96s",
@@ -271,6 +281,7 @@ esp_err_t memory_worker_enqueue(const char *kind,
     if (err != ESP_OK) return err;
     refresh_status_counts();
     copy_text(queued_id, queued_id_size, id);
+    ESP_LOGI(TAG, "Queued memory note %s at %s", id, path);
     return ESP_OK;
 }
 
