@@ -323,15 +323,18 @@ esp_err_t memory_model_generate_metadata(const char *kind,
                             BRN_MEMORY_MODEL_MAX_TOKENS);
     const char *system_prompt =
         "You generate metadata for an embedded AI memory system. "
-        "Return one JSON object only with keys: title, summary, tags, link_ids. "
+        "Return one JSON object only with keys: title, summary, tags, link_ids, match_id. "
         "summary must be concise. tags must be short lowercase strings. "
-        "link_ids must only use ids from the provided candidate catalog.";
+        "link_ids must only use ids from the provided candidate catalog. "
+        "match_id must be either an empty string or exactly one id from the provided candidate catalog. "
+        "Use match_id when the new memory should update an existing durable memory node instead of creating a new one.";
     const char *user_fmt =
         "kind: %s\n"
         "title: %s\n"
         "content:\n%s\n\n"
         "candidate catalog:\n%s\n\n"
-        "Return JSON only.";
+        "Return JSON only. "
+        "If an existing node already represents the same long-term fact or preference, set match_id to that node id; otherwise use an empty string.";
     char *user_prompt = NULL;
     int user_len = snprintf(NULL, 0, user_fmt, kind ? kind : "note", title ? title : "", content ? content : "", catalog ? catalog : "");
     user_prompt = calloc(1, (size_t)user_len + 1);

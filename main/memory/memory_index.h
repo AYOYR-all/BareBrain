@@ -33,6 +33,7 @@ esp_err_t memory_index_search(const char *query,
                               int limit,
                               char *output,
                               size_t output_size);
+esp_err_t memory_index_get_node(const char *node_id, brn_memory_node_t *node);
 esp_err_t memory_index_read_node(const char *node_id, char *output, size_t output_size);
 esp_err_t memory_index_expand_links(const char *node_id,
                                     int limit,

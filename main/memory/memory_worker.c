@@ -3,6 +3,7 @@
 #include "memory/memory_index.h"
 #include "memory/memory_model.h"
 #include "memory/memory_store.h"
+#include "memory/memory_worker_item.h"
 #include "storage/storage_fs.h"
 
 #include <stdio.h>
@@ -24,36 +25,6 @@ static void copy_text(char *dst, size_t size, const char *src)
 {
     if (!dst || size == 0) return;
     snprintf(dst, size, "%s", src ? src : "");
-}
-
-static int default_score_for_kind(const char *kind)
-{
-    if (strcmp(kind, "profile") == 0) return 110;
-    if (strcmp(kind, "doc") == 0) return 85;
-    if (strcmp(kind, "skill") == 0) return 70;
-    if (strcmp(kind, "session") == 0) return 55;
-    return 40;
-}
-
-static esp_err_t read_text_file(const char *path, char **out)
-{
-    FILE *f = fopen(path, "r");
-    if (!f) return ESP_ERR_NOT_FOUND;
-    fseek(f, 0, SEEK_END);
-    long size = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (size < 0) {
-        fclose(f);
-        return ESP_FAIL;
-    }
-    *out = calloc(1, (size_t)size + 1);
-    if (!*out) {
-        fclose(f);
-        return ESP_ERR_NO_MEM;
-    }
-    fread(*out, 1, (size_t)size, f);
-    fclose(f);
-    return ESP_OK;
 }
 
 static esp_err_t write_text_file(const char *path, const char *text)
@@ -118,86 +89,6 @@ static void mark_failed(const char *path)
     }
 }
 
-static void merge_tags(brn_memory_node_t *node, cJSON *tags)
-{
-    cJSON *item = NULL;
-    cJSON_ArrayForEach(item, tags) {
-        if (!cJSON_IsString(item) || node->tag_count >= BRN_MEMORY_MAX_TAGS) break;
-        bool exists = false;
-        for (int i = 0; i < node->tag_count; ++i) exists |= strcmp(node->tags[i], item->valuestring) == 0;
-        if (!exists) copy_text(node->tags[node->tag_count++], sizeof(node->tags[0]), item->valuestring);
-    }
-}
-
-static esp_err_t process_one_item(const char *path)
-{
-    char *raw = NULL;
-    esp_err_t err = read_text_file(path, &raw);
-    if (err != ESP_OK) return err;
-    cJSON *root = cJSON_Parse(raw);
-    free(raw);
-    if (!root) return ESP_FAIL;
-    cJSON *kind = cJSON_GetObjectItem(root, "kind");
-    cJSON *title = cJSON_GetObjectItem(root, "title");
-    cJSON *content = cJSON_GetObjectItem(root, "content");
-    cJSON *tags = cJSON_GetObjectItem(root, "tags");
-    cJSON *source = cJSON_GetObjectItem(root, "source");
-    if (!cJSON_IsString(kind) || !cJSON_IsString(title) || !cJSON_IsString(content)) {
-        cJSON_Delete(root);
-        return ESP_ERR_INVALID_ARG;
-    }
-    char catalog[2048] = {0};
-    char meta_json[2048] = {0};
-    memory_index_build_catalog(catalog, sizeof(catalog), BRN_MEMORY_CATALOG_LIMIT);
-    err = memory_model_generate_metadata(kind->valuestring, title->valuestring, content->valuestring,
-                                         catalog, meta_json, sizeof(meta_json));
-    if (err != ESP_OK) {
-        cJSON_Delete(root);
-        return err;
-    }
-    cJSON *meta = cJSON_Parse(meta_json);
-    if (!meta) {
-        cJSON_Delete(root);
-        return ESP_FAIL;
-    }
-    brn_memory_node_t node = {0};
-    snprintf(node.id, sizeof(node.id), "mem_%08lx", (unsigned long)esp_random());
-    copy_text(node.kind, sizeof(node.kind), kind->valuestring);
-    copy_text(node.title, sizeof(node.title), cJSON_GetStringValue(cJSON_GetObjectItem(meta, "title")));
-    if (!node.title[0]) copy_text(node.title, sizeof(node.title), title->valuestring);
-    copy_text(node.summary, sizeof(node.summary), cJSON_GetStringValue(cJSON_GetObjectItem(meta, "summary")));
-    node.updated_at = time(NULL);
-    node.score_hint = default_score_for_kind(node.kind);
-    memory_store_get_node_path(node.id, node.detail_path, sizeof(node.detail_path));
-    cJSON *model_tags = cJSON_GetObjectItem(meta, "tags");
-    cJSON *links = cJSON_GetObjectItem(meta, "link_ids");
-    merge_tags(&node, model_tags);
-    merge_tags(&node, tags);
-    cJSON *item = NULL;
-    cJSON_ArrayForEach(item, links) {
-        if (!cJSON_IsString(item) || node.link_count >= BRN_MEMORY_MAX_LINKS) break;
-        copy_text(node.link_ids[node.link_count++], sizeof(node.link_ids[0]), item->valuestring);
-    }
-    err = write_text_file(node.detail_path, content->valuestring);
-    if (err == ESP_OK) err = memory_index_upsert(&node);
-    if (err == ESP_OK) {
-        char meta_path[BRN_MEMORY_PATH_LEN];
-        memory_store_get_meta_path(node.id, meta_path, sizeof(meta_path));
-        cJSON_AddStringToObject(root, "node_id", node.id);
-        cJSON_AddStringToObject(root, "resolved_title", node.title);
-        cJSON_AddStringToObject(root, "resolved_summary", node.summary);
-        cJSON_AddStringToObject(root, "resolved_source", cJSON_IsString(source) ? source->valuestring : "");
-        char *final_meta = cJSON_PrintUnformatted(root);
-        if (final_meta) {
-            err = write_text_file(meta_path, final_meta);
-            free(final_meta);
-        }
-    }
-    cJSON_Delete(meta);
-    cJSON_Delete(root);
-    return err;
-}
-
 static void memory_worker_task(void *arg)
 {
     char path[BRN_MEMORY_PATH_LEN];
@@ -209,7 +100,7 @@ static void memory_worker_task(void *arg)
             continue;
         }
         ESP_LOGI(TAG, "Processing memory inbox item: %s", path);
-        esp_err_t err = process_one_item(path);
+        esp_err_t err = memory_worker_process_item(path);
         if (err == ESP_OK) {
             s_status.last_error[0] = '\0';
             s_status.last_success_ts = time(NULL);

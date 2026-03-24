@@ -321,6 +321,16 @@ esp_err_t memory_index_search(const char *query,
     return ESP_OK;
 }
 
+esp_err_t memory_index_get_node(const char *node_id, brn_memory_node_t *node)
+{
+    if (!node_id || !node || !node_id[0]) return ESP_ERR_INVALID_ARG;
+    xSemaphoreTake(s_lock, portMAX_DELAY);
+    brn_memory_node_t *found = find_node(node_id);
+    if (found) *node = *found;
+    xSemaphoreGive(s_lock);
+    return found ? ESP_OK : ESP_ERR_NOT_FOUND;
+}
+
 esp_err_t memory_index_read_node(const char *node_id, char *output, size_t output_size)
 {
     char path[BRN_MEMORY_PATH_LEN];

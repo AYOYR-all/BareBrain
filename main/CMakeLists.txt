@@ -13,6 +13,7 @@ idf_component_register(
         "memory/memory_store.c"
         "memory/memory_index.c"
         "memory/memory_model.c"
+        "memory/memory_worker_item.c"
         "memory/memory_worker.c"
         "memory/session_mgr.c"
         "storage/storage_manager.c"
