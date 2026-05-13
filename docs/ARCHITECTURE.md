@@ -69,7 +69,8 @@ main/
 ├── cron/                     scheduled message triggers
 ├── heartbeat/                periodic HEARTBEAT.md checks
 ├── onboard/                  Wi-Fi/admin portal
-└── tools/                    web_search, get_current_time, files, cron, gpio
+├── voice/                    local TTS abstraction + TW-TTS UART backend
+└── tools/                    web_search, get_current_time, files, cron, gpio, tts
 ```
 
 ## Key Configuration
@@ -80,6 +81,8 @@ main/
   - onboarding/admin portal at `http://192.168.4.1`
 - Feishu credentials are stored under the `feishu_config` NVS namespace.
 - SD card support uses `SDMMC / SDIO 4-bit`; pins are configured in `main/brn_config.h`.
+- Local TW-TTS voice support uses UART settings in `main/brn_config.h`.
+- Physical wiring for USB, SD, TW-TTS, and extension GPIO is maintained in `docs/WIRING.md`.
 
 ## Task Layout
 

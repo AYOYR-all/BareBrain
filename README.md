@@ -1,7 +1,7 @@
 # BareBrain
 
 <p align="center">
-  <strong><a href="README.md">English</a> | <a href="README_CN.md">中文</a> | <a href="README_JA.md">日本語</a></strong>
+  <strong><a href="README.md">English</a> | <a href="README_CN.md">中文</a></strong>
 </p>
 
 > BareBrain is a derivative work based on [memovai/mimiclaw](https://github.com/memovai/mimiclaw) and distributed under the MIT License.
@@ -259,24 +259,7 @@ Runtime behavior:
 
 The current firmware supports only `SDMMC / SDIO 4-bit`. You do not need to type a mount command manually. On boot, the device mounts `/spiffs` first and then tries to mount `/sdcard`. If SD mount succeeds, indexed memory, sessions, and docs use the SD card. If it fails, the firmware logs the error clearly, sessions and docs keep their existing behavior, and indexed memory remains unavailable.
 
-For the current `SDMMC / SDIO 4-bit` firmware, wire the TF module like this:
-
-| Module label | ESP32-S3 GPIO |
-|------|------|
-| `D02` | `GPIO12` |
-| `D01` | `GPIO4` |
-| `MOSI / CMD` | `GPIO15` |
-| `MISO / D00` | `GPIO2` |
-| `CLK` | `GPIO14` |
-| `CS / D03` | `GPIO13` |
-| `GND` | `GND` |
-| `VCC` | `3.3V` |
-
-Wiring notes:
-
-- `VCC` must go to `3.3V`, not `5V`
-- Interpret the silk labels in `SDIO` mode
-- `CS / D03` is required because in `SDIO 4-bit` mode it is `D3`
+For the current `SDMMC / SDIO 4-bit` firmware, TF module wiring is maintained in **[docs/WIRING.md](docs/WIRING.md)**.
 
 After wiring and powering on, verify mount status from the serial CLI:
 
@@ -309,6 +292,8 @@ BareBrain supports tool calling for both Anthropic and OpenAI — the LLM can ca
 | `cron_add` | Schedule a recurring or one-shot task (the LLM creates cron jobs on its own) |
 | `cron_list` | List all scheduled cron jobs |
 | `cron_remove` | Remove a cron job by ID |
+| `tts_say` | Speak text through a local TW-TTS UART voice module |
+| `tts_control` | Stop, pause, resume, query status, or adjust TW-TTS volume/tone |
 
 To enable web search, set a [Tavily API key](https://app.tavily.com/home) via `BRN_SECRET_TAVILY_KEY` (preferred), or a [Brave Search API key](https://brave.com/search/api/) via `BRN_SECRET_SEARCH_KEY` in `brn_secrets.h`.
 
@@ -334,6 +319,7 @@ This turns BareBrain into a proactive assistant — write tasks to `HEARTBEAT.md
 - **Multi-provider** — supports both Anthropic (Claude) and OpenAI (GPT), switchable at runtime
 - **Cron scheduler** — the AI can schedule its own recurring and one-shot tasks, persisted across reboots
 - **Heartbeat** — periodically checks a task file and prompts the AI to act autonomously
+- **Local voice** — optional TW-TTS UART speech module for audible responses
 - **Tool use** — ReAct agent loop with tool calling for both providers
 
 ## For Developers
@@ -341,6 +327,8 @@ This turns BareBrain into a proactive assistant — write tasks to `HEARTBEAT.md
 Technical details live in the `docs/` folder:
 
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — system design, module map, task layout, memory budget, protocols, flash partitions
+- **[docs/WIRING.md](docs/WIRING.md)** — unified wiring table for USB, SD card, TW-TTS, and extension GPIO
+- **[docs/TW_TTS.md](docs/TW_TTS.md)** — TW-TTS UART protocol and debug notes
 - **[docs/TODO.md](docs/TODO.md)** — feature gap tracker and roadmap
 - **[docs/WIFI_ONBOARDING_AP.md](docs/WIFI_ONBOARDING_AP.md)** — how the local `BareBrain-XXXX` onboarding/admin AP flow works
 - **[docs/tool-setup/](docs/tool-setup/README.md)** — configuration guides for external service integrations (Tavily, etc.)

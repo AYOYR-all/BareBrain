@@ -28,6 +28,7 @@
 #include "skills/skill_loader.h"
 #include "onboard/wifi_onboard.h"
 #include "storage/storage_manager.h"
+#include "voice/voice_tts.h"
 
 static const char *TAG = "brn";
 
@@ -118,6 +119,10 @@ void app_main(void)
     ESP_ERROR_CHECK(llm_proxy_init());
     ESP_ERROR_CHECK(memory_model_init());
     ESP_ERROR_CHECK(memory_worker_init());
+    esp_err_t tts_err = voice_tts_init();
+    if (tts_err != ESP_OK) {
+        ESP_LOGW(TAG, "Voice TTS unavailable: %s", esp_err_to_name(tts_err));
+    }
     log_main_stack_watermark("memory subsystem init");
     ESP_ERROR_CHECK(tool_registry_init());
     ESP_ERROR_CHECK(cron_service_init());

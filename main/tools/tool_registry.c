@@ -5,6 +5,7 @@
 #include "tools/tool_files.h"
 #include "tools/tool_cron.h"
 #include "tools/tool_gpio.h"
+#include "tools/tool_tts.h"
 #include "tools/tool_memory.h"
 
 #include <string.h>
@@ -13,7 +14,7 @@
 
 static const char *TAG = "tools";
 
-#define MAX_TOOLS 20
+#define MAX_TOOLS 24
 
 static brn_tool_t s_tools[MAX_TOOLS];
 static int s_tool_count = 0;
@@ -214,6 +215,39 @@ esp_err_t tool_registry_init(void)
         .execute = tool_gpio_read_all_execute,
     };
     register_tool(&ga);
+
+    /* Register TTS tools */
+    tool_tts_init();
+
+    brn_tool_t ts = {
+        .name = "tts_say",
+        .description = "Speak text aloud through the local TW-TTS UART module. Use when audible local feedback is requested.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{"
+            "\"text\":{\"type\":\"string\",\"description\":\"UTF-8 text to speak\"},"
+            "\"volume\":{\"type\":\"integer\",\"description\":\"Optional volume 0-9\"},"
+            "\"tone\":{\"type\":\"integer\",\"description\":\"Optional tone 0-9\"},"
+            "\"interrupt\":{\"type\":\"boolean\",\"description\":\"Stop current speech before speaking\"}"
+            "},"
+            "\"required\":[\"text\"]}",
+        .execute = tool_tts_say_execute,
+    };
+    register_tool(&ts);
+
+    brn_tool_t tc = {
+        .name = "tts_control",
+        .description = "Control the local TW-TTS module: stop, pause, resume, status, volume, or tone.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{"
+            "\"action\":{\"type\":\"string\",\"description\":\"stop, pause, resume, status, volume, or tone\"},"
+            "\"value\":{\"type\":\"integer\",\"description\":\"Required for volume/tone, 0-9\"}"
+            "},"
+            "\"required\":[\"action\"]}",
+        .execute = tool_tts_control_execute,
+    };
+    register_tool(&tc);
 
     brn_tool_t ms = {
         .name = "memory_search",
