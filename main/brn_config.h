@@ -159,20 +159,6 @@
 /* GPIO */
 #define BRN_GPIO_CONFIG_SECTION     1   /* enable GPIO tools */
 
-/* Voice / TW-TTS UART module */
-#define BRN_TTS_ENABLED             1
-#define BRN_TTS_UART_NUM            1
-#define BRN_TTS_UART_BAUD_RATE      9600
-#define BRN_TTS_UART_TX_PIN         17  /* ESP32-S3 TX -> TW-TTS RX */
-#define BRN_TTS_UART_RX_PIN         18  /* ESP32-S3 RX <- TW-TTS TX, set -1 if unused */
-#define BRN_TTS_UART_RX_BUF_SIZE    256
-#define BRN_TTS_UART_TX_BUF_SIZE    512
-#define BRN_TTS_MAX_TEXT_BYTES      512
-#define BRN_TTS_DEFAULT_ENCODING    0x04  /* UTF-8 */
-#define BRN_TTS_CONTROL_ENCODING    0x01  /* matches TW-TTS shop examples for ASCII controls */
-#define BRN_TTS_TX_TIMEOUT_MS       1000
-#define BRN_TTS_STATUS_TIMEOUT_MS   100
-
 /* Skills */
 #define BRN_SKILLS_PREFIX           BRN_SPIFFS_BASE "/skills/"
 

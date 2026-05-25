@@ -186,7 +186,6 @@ C file: mod_channel_mqtt.c
 
 - `weather_get`
 - `gpio_write`
-- `tts_say`
 - `memory_search`
 
 不推荐：
@@ -202,7 +201,7 @@ C file: mod_channel_mqtt.c
 ```text
 weather.provider
 channel.mqtt
-device.twtts
+device.display
 agent.desktop_bridge
 ```
 

@@ -3,7 +3,6 @@
 extern const brn_mod_t brn_mod_tool_web_search;
 extern const brn_mod_t brn_mod_tool_get_time;
 extern const brn_mod_t brn_mod_tool_files;
-extern const brn_mod_t brn_mod_tool_tts;
 extern const brn_mod_t brn_mod_tool_gpio;
 extern const brn_mod_t brn_mod_tool_cron;
 extern const brn_mod_t brn_mod_tool_memory;
@@ -11,7 +10,6 @@ extern const brn_mod_t brn_mod_tool_memory;
 static const brn_mod_t *const s_builtin_mods[] = {
     &brn_mod_tool_get_time,
     &brn_mod_tool_files,
-    &brn_mod_tool_tts,
     &brn_mod_tool_gpio,
     &brn_mod_tool_cron,
     &brn_mod_tool_web_search,

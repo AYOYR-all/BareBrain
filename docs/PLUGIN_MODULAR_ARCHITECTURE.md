@@ -28,7 +28,6 @@ BareBrain 当前已有自然边界：
 - `main/channels/feishu/`：飞书通道
 - `main/cron/`：定时任务
 - `main/heartbeat/`：主动心跳任务
-- `main/voice/`：本地 TTS
 - `spiffs_data/skills/`：Markdown skill 文件
 
 但当前仍是静态单体：
@@ -78,7 +77,6 @@ ESP32-S3 不适合在运行时下载并执行未知 C/JS/C# 插件。
 - WebSocket chat
 - web_search
 - gpio_write
-- tts_say
 - cron_add
 - weather_get
 
@@ -200,9 +198,7 @@ main/mods/
   tool_memory/
   tool_cron/
   tool_gpio/
-  tool_tts/
   service_heartbeat/
-  device_twtts/
 ```
 
 ### 5.4 Data Mods
@@ -244,7 +240,7 @@ Desktop Bridge Mods 运行在电脑端，ESP32 通过 WebSocket/RPC 调用。
 | `data` | 否 | SPIFFS/SD | skill、persona、prompt pack |
 | `tool` | 是 | ESP32 | web_search、weather、file tools |
 | `channel` | 是 | ESP32 | WebSocket、Feishu、MQTT |
-| `device` | 是 | ESP32 | TTS、屏幕、按钮、传感器 |
+| `device` | 是 | ESP32 | 屏幕、按钮、传感器 |
 | `service` | 是 | ESP32 | heartbeat、cron scheduler |
 | `bridge` | 部分需要 | ESP32 + 电脑端 | desktop bridge、browser control |
 | `profile` | 否 | 电脑端 | 一组插件组合和配置 |
@@ -499,11 +495,10 @@ typedef struct {
 
 1. `tool_get_time`
 2. `tool_files`
-3. `tool_tts`
-4. `tool_gpio`
-5. `tool_cron`
-6. `tool_web_search`
-7. `tool_memory`
+3. `tool_gpio`
+4. `tool_cron`
+5. `tool_web_search`
+6. `tool_memory`
 
 ### Phase 3：Data Mod
 

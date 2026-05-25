@@ -292,8 +292,6 @@ BareBrain supports tool calling for both Anthropic and OpenAI — the LLM can ca
 | `cron_add` | Schedule a recurring or one-shot task (the LLM creates cron jobs on its own) |
 | `cron_list` | List all scheduled cron jobs |
 | `cron_remove` | Remove a cron job by ID |
-| `tts_say` | Speak text through a local TW-TTS UART voice module |
-| `tts_control` | Stop, pause, resume, query status, or adjust TW-TTS volume/tone |
 
 To enable web search, set a [Tavily API key](https://app.tavily.com/home) via `BRN_SECRET_TAVILY_KEY` (preferred), or a [Brave Search API key](https://brave.com/search/api/) via `BRN_SECRET_SEARCH_KEY` in `brn_secrets.h`.
 
@@ -319,7 +317,6 @@ This turns BareBrain into a proactive assistant — write tasks to `HEARTBEAT.md
 - **Multi-provider** — supports both Anthropic (Claude) and OpenAI (GPT), switchable at runtime
 - **Cron scheduler** — the AI can schedule its own recurring and one-shot tasks, persisted across reboots
 - **Heartbeat** — periodically checks a task file and prompts the AI to act autonomously
-- **Local voice** — optional TW-TTS UART speech module for audible responses
 - **Tool use** — ReAct agent loop with tool calling for both providers
 
 ## For Developers
@@ -327,8 +324,7 @@ This turns BareBrain into a proactive assistant — write tasks to `HEARTBEAT.md
 Technical details live in the `docs/` folder:
 
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — system design, module map, task layout, memory budget, protocols, flash partitions
-- **[docs/WIRING.md](docs/WIRING.md)** — unified wiring table for USB, SD card, TW-TTS, and extension GPIO
-- **[docs/TW_TTS.md](docs/TW_TTS.md)** — TW-TTS UART protocol and debug notes
+- **[docs/WIRING.md](docs/WIRING.md)** — unified wiring table for USB, SD card, and extension GPIO
 - **[docs/TODO.md](docs/TODO.md)** — feature gap tracker and roadmap
 - **[docs/WIFI_ONBOARDING_AP.md](docs/WIFI_ONBOARDING_AP.md)** — how the local `BareBrain-XXXX` onboarding/admin AP flow works
 - **[docs/tool-setup/](docs/tool-setup/README.md)** — configuration guides for external service integrations (Tavily, etc.)
