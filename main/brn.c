@@ -9,6 +9,7 @@
 #include "nvs_flash.h"
 
 #include "brn_config.h"
+#include "core/mod/brn_mod_manager.h"
 #include "bus/message_bus.h"
 #include "wifi/wifi_manager.h"
 #include "channels/feishu/feishu_bot.h"
@@ -124,7 +125,8 @@ void app_main(void)
         ESP_LOGW(TAG, "Voice TTS unavailable: %s", esp_err_to_name(tts_err));
     }
     log_main_stack_watermark("memory subsystem init");
-    ESP_ERROR_CHECK(tool_registry_init());
+    ESP_ERROR_CHECK(brn_tool_registry_init());
+    ESP_ERROR_CHECK(brn_mod_manager_init());
     ESP_ERROR_CHECK(cron_service_init());
     ESP_ERROR_CHECK(heartbeat_init());
     ESP_ERROR_CHECK(agent_loop_init());
@@ -173,6 +175,7 @@ void app_main(void)
             ? ESP_OK : ESP_FAIL);
 
         /* Start network-dependent services */
+        ESP_ERROR_CHECK(brn_mod_manager_start());
         ESP_ERROR_CHECK(agent_loop_start());
         ESP_ERROR_CHECK(memory_worker_start());
         ESP_ERROR_CHECK(feishu_bot_start());

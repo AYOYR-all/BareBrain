@@ -502,13 +502,29 @@ esp_err_t tool_web_search_execute(const char *input_json, char *output, size_t o
 
 esp_err_t tool_web_search_set_key(const char *api_key)
 {
+    if (!api_key) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     nvs_handle_t nvs;
-    ESP_ERROR_CHECK(nvs_open(BRN_NVS_SEARCH, NVS_READWRITE, &nvs));
-    ESP_ERROR_CHECK(nvs_set_str(nvs, BRN_NVS_KEY_API_KEY, api_key));
-    ESP_ERROR_CHECK(nvs_commit(nvs));
+    esp_err_t err = nvs_open(BRN_NVS_SEARCH, NVS_READWRITE, &nvs);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open search NVS: %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = nvs_set_str(nvs, BRN_NVS_KEY_API_KEY, api_key);
+    if (err == ESP_OK) {
+        err = nvs_commit(nvs);
+    }
     nvs_close(nvs);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to save search API key: %s", esp_err_to_name(err));
+        return err;
+    }
 
     strncpy(s_brave_key, api_key, sizeof(s_brave_key) - 1);
+    s_brave_key[sizeof(s_brave_key) - 1] = '\0';
     if (s_provider == SEARCH_PROVIDER_NONE) {
         s_provider = SEARCH_PROVIDER_BRAVE;
     }
@@ -518,13 +534,29 @@ esp_err_t tool_web_search_set_key(const char *api_key)
 
 esp_err_t tool_web_search_set_tavily_key(const char *api_key)
 {
+    if (!api_key) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     nvs_handle_t nvs;
-    ESP_ERROR_CHECK(nvs_open(BRN_NVS_SEARCH, NVS_READWRITE, &nvs));
-    ESP_ERROR_CHECK(nvs_set_str(nvs, BRN_NVS_KEY_TAVILY_KEY, api_key));
-    ESP_ERROR_CHECK(nvs_commit(nvs));
+    esp_err_t err = nvs_open(BRN_NVS_SEARCH, NVS_READWRITE, &nvs);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open search NVS: %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = nvs_set_str(nvs, BRN_NVS_KEY_TAVILY_KEY, api_key);
+    if (err == ESP_OK) {
+        err = nvs_commit(nvs);
+    }
     nvs_close(nvs);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to save Tavily API key: %s", esp_err_to_name(err));
+        return err;
+    }
 
     strncpy(s_tavily_key, api_key, sizeof(s_tavily_key) - 1);
+    s_tavily_key[sizeof(s_tavily_key) - 1] = '\0';
     s_provider = SEARCH_PROVIDER_TAVILY;
     ESP_LOGI(TAG, "Tavily API key saved");
     return ESP_OK;

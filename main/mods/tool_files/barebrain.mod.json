@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "tool-files",
+  "name": "File Tools",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "Expose constrained local storage read, write, edit, and directory listing tools.",
+  "targets": ["esp32s3"],
+  "sources": ["src/mod_tool_files.c", "src/tool_files.c"],
+  "headers": ["src/tool_files.h"],
+  "dependencies": ["core.tool_registry", "core.storage"],
+  "conflicts": [],
+  "permissions": ["storage.read", "storage.write"],
+  "tools": ["read_file", "write_file", "edit_file", "list_dir"],
+  "services": [],
+  "resources": {
+    "tasks": 0,
+    "gpio": [],
+    "uart": [],
+    "psram_bytes_hint": 0,
+    "flash_bytes_hint": 8192
+  }
+}

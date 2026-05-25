@@ -8,7 +8,7 @@
 #include "memory/session_mgr.h"
 #include "proxy/http_proxy.h"
 #include "tools/tool_registry.h"
-#include "tools/tool_web_search.h"
+#include "mods/tool_web_search/src/tool_web_search.h"
 #include "cron/cron_service.h"
 #include "heartbeat/heartbeat.h"
 #include "skills/skill_loader.h"
@@ -712,7 +712,7 @@ static int cmd_tool_exec(int argc, char **argv)
         return 1;
     }
 
-    esp_err_t err = tool_registry_execute(tool_name, input_json, output, 4096);
+    esp_err_t err = brn_tool_execute(tool_name, input_json, output, 4096);
     printf("tool_exec status: %s\n", esp_err_to_name(err));
     printf("%s\n", output[0] ? output : "(empty)");
     free(output);
@@ -736,7 +736,8 @@ typedef struct {
 static void web_search_task(void *arg)
 {
     web_search_task_ctx_t *task_ctx = (web_search_task_ctx_t *)arg;
-    task_ctx->err = tool_web_search_execute(task_ctx->input_json, task_ctx->output, task_ctx->output_size);
+    task_ctx->err = brn_tool_execute("web_search", task_ctx->input_json,
+                                     task_ctx->output, task_ctx->output_size);
     xSemaphoreGive(task_ctx->done);
     vTaskDelete(NULL);
 }

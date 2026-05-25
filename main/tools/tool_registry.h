@@ -11,15 +11,19 @@ typedef struct {
 } brn_tool_t;
 
 /**
- * Initialize tool registry and register all built-in tools.
+ * Initialize the empty tool registry. Tool mods register themselves later.
  */
-esp_err_t tool_registry_init(void);
+esp_err_t brn_tool_registry_init(void);
+
+esp_err_t brn_tool_register(const brn_tool_t *tool);
+esp_err_t brn_tool_unregister(const char *name);
 
 /**
  * Get the pre-built tools JSON array string for the API request.
- * Returns NULL if no tools are registered.
+ * Returns NULL only if the JSON cache cannot be built.
  */
-const char *tool_registry_get_tools_json(void);
+const char *brn_tool_registry_get_tools_json(void);
+size_t brn_tool_registry_append_prompt(char *buf, size_t size, size_t offset);
 
 /**
  * Execute a tool by name.
@@ -30,5 +34,5 @@ const char *tool_registry_get_tools_json(void);
  * @param output_size  Size of output buffer
  * @return ESP_OK on success, ESP_ERR_NOT_FOUND if tool unknown
  */
-esp_err_t tool_registry_execute(const char *name, const char *input_json,
-                                char *output, size_t output_size);
+esp_err_t brn_tool_execute(const char *name, const char *input_json,
+                           char *output, size_t output_size);

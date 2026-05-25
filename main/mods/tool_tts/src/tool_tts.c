@@ -1,4 +1,4 @@
-#include "tools/tool_tts.h"
+#include "tool_tts.h"
 #include "brn_config.h"
 #include "voice/voice_tts.h"
 

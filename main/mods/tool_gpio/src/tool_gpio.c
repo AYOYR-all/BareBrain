@@ -1,4 +1,4 @@
-#include "tools/tool_gpio.h"
+#include "tool_gpio.h"
 #include "tools/gpio_policy.h"
 #include "brn_config.h"
 

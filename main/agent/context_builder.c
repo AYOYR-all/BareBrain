@@ -1,7 +1,9 @@
 #include "context_builder.h"
 #include "brn_config.h"
+#include "core/mod/brn_mod_manager.h"
 #include "memory/memory_index.h"
 #include "skills/skill_loader.h"
+#include "tools/tool_registry.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -41,32 +43,14 @@ esp_err_t context_build_system_prompt(char *buf, size_t size)
         "- Be helpful, accurate, and concise. If uncertain, say so clearly and prefer using tools to verify.\n"
         "- Reply primarily in Chinese, with conclusions first and clear structure whenever possible.\n\n"
         "## Available Tools\n"
-        "You can use the following tools:\n"
-        "- web_search: Search current information (prefer Tavily, fall back to Brave when configured). Use it when you need up-to-date facts, news, weather, or information outside your training data.\n"
-        "- get_current_time: Get the current date and time. You do not have a built-in clock, so you must call it whenever you need to know the time or date.\n"
-        "- memory_search: Search the memory directory before reading node details.\n"
-        "- memory_read_node: Read one memory node in full after you know its ID.\n"
-        "- memory_expand_links: Follow memory links to related nodes when you need association or context.\n"
-        "- memory_delete_node: Permanently delete one memory node by ID when Master explicitly wants indexed memory removed.\n"
-        "- memory_upsert_note: Queue important long-term facts, preferences, project notes, or useful summaries for async indexing.\n"
-        "- memory_reindex_status: Inspect the async memory indexing queue and active memory model.\n"
-        "- read_file: Read a local file. The path must start with " BRN_SPIFFS_BASE "/ or " BRN_SD_BASE "/.\n"
-        "- write_file: Write or overwrite a file.\n"
-        "- edit_file: Perform find-and-replace edits on a file.\n"
-        "- list_dir: List local files, optionally filtered by prefix.\n"
-        "- cron_add: Create recurring or one-shot scheduled tasks. When a task fires, it triggers an agent execution.\n"
-        "- cron_list: List all scheduled tasks.\n"
-        "- cron_remove: Remove a scheduled task by ID.\n"
-        "- gpio_write: Set a GPIO high or low to control LEDs, relays, and digital outputs.\n"
-        "- gpio_read: Read a single GPIO level to check switches, buttons, and sensors.\n"
-        "- gpio_read_all: Read all allowed GPIOs at once, which is useful for an overall status check.\n"
-        "- tts_say: Speak text aloud through the local TW-TTS voice module when audible feedback is useful or requested.\n"
-        "- tts_control: Stop, pause, resume, query status, or adjust volume/tone on the local TW-TTS voice module.\n\n"
-        "## GPIO\n"
-        "You can control the ESP32-S3 hardware GPIOs. Use gpio_read to check switches or sensor states, and gpio_write to control outputs."
-        " Pin access is limited by policy, so only allowed pins may be used. For digital input or output issues, prefer these tools to confirm the real hardware state first.\n\n"
-        "## Voice\n"
-        "A local TW-TTS module may be connected over UART. Use tts_say when Master asks you to speak, announce, read something aloud, or provide local audible feedback. Use tts_control to stop, pause, resume, query status, or set volume/tone.\n\n"
+        "You can use the following registered tools:\n");
+
+    off = brn_tool_registry_append_prompt(buf, size, off);
+    off += snprintf(buf + off, size - off, "\n");
+    brn_mod_manager_contribute_prompt(buf, size, &off);
+
+    off += snprintf(buf + off, size - off,
+        "\n"
         "Use tools proactively when needed, and provide the final answer in text after the work is done.\n\n"
         "## Memory\n"
         "Persistent memory lives in the indexed memory directory on the SD card.\n"

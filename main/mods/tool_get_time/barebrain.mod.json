@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "tool-get-time",
+  "name": "Current Time Tool",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "Expose current date/time lookup and system clock synchronization as an LLM tool.",
+  "targets": ["esp32s3"],
+  "sources": ["src/mod_tool_get_time.c", "src/tool_get_time.c"],
+  "headers": ["src/tool_get_time.h"],
+  "dependencies": ["core.tool_registry", "core.net"],
+  "conflicts": [],
+  "permissions": ["network"],
+  "tools": ["get_current_time"],
+  "services": [],
+  "resources": {
+    "tasks": 0,
+    "gpio": [],
+    "uart": [],
+    "psram_bytes_hint": 0,
+    "flash_bytes_hint": 4096
+  }
+}

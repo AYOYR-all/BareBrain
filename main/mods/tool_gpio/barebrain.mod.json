@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "tool-gpio",
+  "name": "GPIO Tools",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "Expose policy-constrained GPIO read and write tools.",
+  "targets": ["esp32s3"],
+  "sources": ["src/mod_tool_gpio.c", "src/tool_gpio.c"],
+  "headers": ["src/tool_gpio.h"],
+  "dependencies": ["core.tool_registry", "core.permission"],
+  "conflicts": [],
+  "permissions": ["gpio.read", "gpio.write"],
+  "tools": ["gpio_write", "gpio_read", "gpio_read_all"],
+  "services": [],
+  "resources": {
+    "tasks": 0,
+    "gpio": [],
+    "uart": [],
+    "psram_bytes_hint": 0,
+    "flash_bytes_hint": 4096
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "id": "tool-web-search",
+  "name": "Web Search Tool",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "Expose web search through configured Tavily or Brave Search providers.",
+  "targets": ["esp32s3"],
+  "sources": ["src/mod_tool_web_search.c", "src/tool_web_search.c"],
+  "headers": ["src/tool_web_search.h"],
+  "dependencies": ["core.tool_registry", "core.net", "core.config"],
+  "conflicts": [],
+  "permissions": ["network", "secret.read"],
+  "tools": ["web_search"],
+  "services": [],
+  "resources": {
+    "tasks": 0,
+    "gpio": [],
+    "uart": [],
+    "psram_bytes_hint": 8192,
+    "flash_bytes_hint": 32768
+  },
+  "config_schema": {
+    "search.api_key": {
+      "type": "secret",
+      "label": "Search API Key",
+      "required": false
+    }
+  }
+}

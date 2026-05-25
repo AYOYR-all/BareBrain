@@ -164,7 +164,7 @@ static cJSON *build_tool_results(const llm_response_t *resp, const brn_msg_t *ms
 
         /* Execute tool */
         tool_output[0] = '\0';
-        tool_registry_execute(call->name, tool_input, tool_output, tool_output_size);
+        brn_tool_execute(call->name, tool_input, tool_output, tool_output_size);
         free(patched_input);
 
         ESP_LOGI(TAG, "Tool %s result: %d bytes", call->name, (int)strlen(tool_output));
@@ -195,7 +195,7 @@ static void agent_loop_task(void *arg)
         return;
     }
 
-    const char *tools_json = tool_registry_get_tools_json();
+    const char *tools_json = brn_tool_registry_get_tools_json();
 
     while (1) {
         brn_msg_t msg;

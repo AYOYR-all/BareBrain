@@ -1,41 +1,61 @@
-#include "tool_registry.h"
-#include "brn_config.h"
-#include "tools/tool_web_search.h"
-#include "tools/tool_get_time.h"
-#include "tools/tool_files.h"
-#include "tools/tool_cron.h"
-#include "tools/tool_gpio.h"
-#include "tools/tool_tts.h"
-#include "tools/tool_memory.h"
+#include "tools/tool_registry.h"
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include "esp_log.h"
+
 #include "cJSON.h"
+#include "esp_log.h"
 
 static const char *TAG = "tools";
 
-#define MAX_TOOLS 24
+#define MAX_TOOLS 32
 
 static brn_tool_t s_tools[MAX_TOOLS];
 static int s_tool_count = 0;
-static char *s_tools_json = NULL;  /* cached JSON array string */
+static char *s_tools_json = NULL;
 
-static void register_tool(const brn_tool_t *tool)
+static void invalidate_tools_json(void)
 {
-    if (s_tool_count >= MAX_TOOLS) {
-        ESP_LOGE(TAG, "Tool registry full");
-        return;
-    }
-    s_tools[s_tool_count++] = *tool;
-    ESP_LOGI(TAG, "Registered tool: %s", tool->name);
+    free(s_tools_json);
+    s_tools_json = NULL;
 }
 
-static void build_tools_json(void)
+static size_t appendf(char *buf, size_t size, size_t offset, const char *fmt, ...)
+{
+    if (!buf || size == 0 || offset >= size) {
+        return offset;
+    }
+
+    va_list args;
+    va_start(args, fmt);
+    int n = vsnprintf(buf + offset, size - offset, fmt, args);
+    va_end(args);
+
+    if (n < 0) {
+        return offset;
+    }
+    if ((size_t)n >= size - offset) {
+        return size - 1;
+    }
+    return offset + (size_t)n;
+}
+
+static esp_err_t build_tools_json(void)
 {
     cJSON *arr = cJSON_CreateArray();
+    if (!arr) {
+        return ESP_ERR_NO_MEM;
+    }
 
     for (int i = 0; i < s_tool_count; i++) {
         cJSON *tool = cJSON_CreateObject();
+        if (!tool) {
+            cJSON_Delete(arr);
+            return ESP_ERR_NO_MEM;
+        }
+
         cJSON_AddStringToObject(tool, "name", s_tools[i].name);
         cJSON_AddStringToObject(tool, "description", s_tools[i].description);
 
@@ -47,300 +67,109 @@ static void build_tools_json(void)
         cJSON_AddItemToArray(arr, tool);
     }
 
-    free(s_tools_json);
+    invalidate_tools_json();
     s_tools_json = cJSON_PrintUnformatted(arr);
     cJSON_Delete(arr);
 
+    if (!s_tools_json) {
+        return ESP_ERR_NO_MEM;
+    }
+
     ESP_LOGI(TAG, "Tools JSON built (%d tools)", s_tool_count);
+    return ESP_OK;
 }
 
-esp_err_t tool_registry_init(void)
+esp_err_t brn_tool_registry_init(void)
 {
     s_tool_count = 0;
-
-    /* Register web_search */
-    tool_web_search_init();
-
-    brn_tool_t ws = {
-        .name = "web_search",
-        .description = "Search the web for current information via Tavily (preferred) or Brave when configured.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"query\":{\"type\":\"string\",\"description\":\"The search query\"}},"
-            "\"required\":[\"query\"]}",
-        .execute = tool_web_search_execute,
-    };
-    register_tool(&ws);
-
-    /* Register get_current_time */
-    brn_tool_t gt = {
-        .name = "get_current_time",
-        .description = "Get the current date and time. Also sets the system clock. Call this when you need to know what time or date it is.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{},"
-            "\"required\":[]}",
-        .execute = tool_get_time_execute,
-    };
-    register_tool(&gt);
-
-    /* Register read_file */
-    brn_tool_t rf = {
-        .name = "read_file",
-        .description = "Read a file from local storage. Path must start with " BRN_SPIFFS_BASE "/ or " BRN_SD_BASE "/.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Absolute path starting with " BRN_SPIFFS_BASE "/ or " BRN_SD_BASE "/\"}},"
-            "\"required\":[\"path\"]}",
-        .execute = tool_read_file_execute,
-    };
-    register_tool(&rf);
-
-    /* Register write_file */
-    brn_tool_t wf = {
-        .name = "write_file",
-        .description = "Write or overwrite a file on local storage. Path must start with " BRN_SPIFFS_BASE "/ or " BRN_SD_BASE "/.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Absolute path starting with " BRN_SPIFFS_BASE "/ or " BRN_SD_BASE "/\"},"
-            "\"content\":{\"type\":\"string\",\"description\":\"File content to write\"}},"
-            "\"required\":[\"path\",\"content\"]}",
-        .execute = tool_write_file_execute,
-    };
-    register_tool(&wf);
-
-    /* Register edit_file */
-    brn_tool_t ef = {
-        .name = "edit_file",
-        .description = "Find and replace text in a local file. Replaces first occurrence of old_string with new_string.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Absolute path starting with " BRN_SPIFFS_BASE "/ or " BRN_SD_BASE "/\"},"
-            "\"old_string\":{\"type\":\"string\",\"description\":\"Text to find\"},"
-            "\"new_string\":{\"type\":\"string\",\"description\":\"Replacement text\"}},"
-            "\"required\":[\"path\",\"old_string\",\"new_string\"]}",
-        .execute = tool_edit_file_execute,
-    };
-    register_tool(&ef);
-
-    /* Register list_dir */
-    brn_tool_t ld = {
-        .name = "list_dir",
-        .description = "List files on mounted local storage roots, optionally filtered by path prefix.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"prefix\":{\"type\":\"string\",\"description\":\"Optional path prefix filter, e.g. " BRN_SPIFFS_BASE "/memory/ or " BRN_SD_BASE "/docs/\"}},"
-            "\"required\":[]}",
-        .execute = tool_list_dir_execute,
-    };
-    register_tool(&ld);
-
-    /* Register cron_add */
-    brn_tool_t ca = {
-        .name = "cron_add",
-        .description = "Schedule a recurring or one-shot task. The message will trigger an agent turn when the job fires.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{"
-            "\"name\":{\"type\":\"string\",\"description\":\"Short name for the job\"},"
-            "\"schedule_type\":{\"type\":\"string\",\"description\":\"'every' for recurring interval or 'at' for one-shot at a unix timestamp\"},"
-            "\"interval_s\":{\"type\":\"integer\",\"description\":\"Interval in seconds (required for 'every')\"},"
-            "\"at_epoch\":{\"type\":\"integer\",\"description\":\"Unix timestamp to fire at (required for 'at')\"},"
-            "\"message\":{\"type\":\"string\",\"description\":\"Message to inject when the job fires, triggering an agent turn\"},"
-            "\"channel\":{\"type\":\"string\",\"description\":\"Optional reply channel (e.g. 'feishu' or 'websocket'). If omitted, current turn channel is used when available\"},"
-            "\"chat_id\":{\"type\":\"string\",\"description\":\"Optional reply destination ID. If omitted during a channel-bound turn, current chat_id is reused when possible\"}"
-            "},"
-            "\"required\":[\"name\",\"schedule_type\",\"message\"]}",
-        .execute = tool_cron_add_execute,
-    };
-    register_tool(&ca);
-
-    /* Register cron_list */
-    brn_tool_t cl = {
-        .name = "cron_list",
-        .description = "List all scheduled cron jobs with their status, schedule, and IDs.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{},"
-            "\"required\":[]}",
-        .execute = tool_cron_list_execute,
-    };
-    register_tool(&cl);
-
-    /* Register cron_remove */
-    brn_tool_t cr = {
-        .name = "cron_remove",
-        .description = "Remove a scheduled cron job by its ID.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"job_id\":{\"type\":\"string\",\"description\":\"The 8-character job ID to remove\"}},"
-            "\"required\":[\"job_id\"]}",
-        .execute = tool_cron_remove_execute,
-    };
-    register_tool(&cr);
-
-    /* Register GPIO tools */
-    tool_gpio_init();
-
-    brn_tool_t gw = {
-        .name = "gpio_write",
-        .description = "Set a GPIO pin HIGH or LOW. Controls LEDs, relays, and other digital outputs.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"pin\":{\"type\":\"integer\",\"description\":\"GPIO pin number\"},"
-            "\"state\":{\"type\":\"integer\",\"description\":\"1 for HIGH, 0 for LOW\"}},"
-            "\"required\":[\"pin\",\"state\"]}",
-        .execute = tool_gpio_write_execute,
-    };
-    register_tool(&gw);
-
-    brn_tool_t gr = {
-        .name = "gpio_read",
-        .description = "Read a GPIO pin state. Returns HIGH or LOW. Use for checking switches, sensors, and digital inputs.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"pin\":{\"type\":\"integer\",\"description\":\"GPIO pin number\"}},"
-            "\"required\":[\"pin\"]}",
-        .execute = tool_gpio_read_execute,
-    };
-    register_tool(&gr);
-
-    brn_tool_t ga = {
-        .name = "gpio_read_all",
-        .description = "Read all allowed GPIO pin states in a single call. Returns each pin's HIGH/LOW state.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{},"
-            "\"required\":[]}",
-        .execute = tool_gpio_read_all_execute,
-    };
-    register_tool(&ga);
-
-    /* Register TTS tools */
-    tool_tts_init();
-
-    brn_tool_t ts = {
-        .name = "tts_say",
-        .description = "Speak text aloud through the local TW-TTS UART module. Use when audible local feedback is requested.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{"
-            "\"text\":{\"type\":\"string\",\"description\":\"UTF-8 text to speak\"},"
-            "\"volume\":{\"type\":\"integer\",\"description\":\"Optional volume 0-9\"},"
-            "\"tone\":{\"type\":\"integer\",\"description\":\"Optional tone 0-9\"},"
-            "\"interrupt\":{\"type\":\"boolean\",\"description\":\"Stop current speech before speaking\"}"
-            "},"
-            "\"required\":[\"text\"]}",
-        .execute = tool_tts_say_execute,
-    };
-    register_tool(&ts);
-
-    brn_tool_t tc = {
-        .name = "tts_control",
-        .description = "Control the local TW-TTS module: stop, pause, resume, status, volume, or tone.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{"
-            "\"action\":{\"type\":\"string\",\"description\":\"stop, pause, resume, status, volume, or tone\"},"
-            "\"value\":{\"type\":\"integer\",\"description\":\"Required for volume/tone, 0-9\"}"
-            "},"
-            "\"required\":[\"action\"]}",
-        .execute = tool_tts_control_execute,
-    };
-    register_tool(&tc);
-
-    brn_tool_t ms = {
-        .name = "memory_search",
-        .description = "Search the indexed memory directory and return matching node summaries.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"query\":{\"type\":\"string\"},"
-            "\"kind\":{\"type\":\"string\"},"
-            "\"tag\":{\"type\":\"string\"},"
-            "\"limit\":{\"type\":\"integer\"}},"
-            "\"required\":[]}",
-        .execute = tool_memory_search_execute,
-    };
-    register_tool(&ms);
-
-    brn_tool_t mr = {
-        .name = "memory_read_node",
-        .description = "Read the full detail text for one memory node by ID.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"node_id\":{\"type\":\"string\",\"description\":\"Memory node ID\"}},"
-            "\"required\":[\"node_id\"]}",
-        .execute = tool_memory_read_node_execute,
-    };
-    register_tool(&mr);
-
-    brn_tool_t ml = {
-        .name = "memory_expand_links",
-        .description = "Show related memory nodes linked from a node ID.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"node_id\":{\"type\":\"string\"},"
-            "\"limit\":{\"type\":\"integer\"}},"
-            "\"required\":[\"node_id\"]}",
-        .execute = tool_memory_expand_links_execute,
-    };
-    register_tool(&ml);
-
-    brn_tool_t md = {
-        .name = "memory_delete_node",
-        .description = "Hard-delete one indexed memory node by ID, including its detail and metadata files.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"node_id\":{\"type\":\"string\",\"description\":\"Memory node ID\"}},"
-            "\"required\":[\"node_id\"]}",
-        .execute = tool_memory_delete_node_execute,
-    };
-    register_tool(&md);
-
-    brn_tool_t mu = {
-        .name = "memory_upsert_note",
-        .description = "Queue a memory note for async indexing into the memory graph.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{\"kind\":{\"type\":\"string\"},"
-            "\"title\":{\"type\":\"string\"},"
-            "\"content\":{\"type\":\"string\"},"
-            "\"source\":{\"type\":\"string\"},"
-            "\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},"
-            "\"required\":[\"title\",\"content\"]}",
-        .execute = tool_memory_upsert_note_execute,
-    };
-    register_tool(&mu);
-
-    brn_tool_t mx = {
-        .name = "memory_reindex_status",
-        .description = "Show async memory indexing queue status and the active memory model.",
-        .input_schema_json =
-            "{\"type\":\"object\","
-            "\"properties\":{},"
-            "\"required\":[]}",
-        .execute = tool_memory_reindex_status_execute,
-    };
-    register_tool(&mx);
-
-    build_tools_json();
-
+    invalidate_tools_json();
     ESP_LOGI(TAG, "Tool registry initialized");
     return ESP_OK;
 }
 
-const char *tool_registry_get_tools_json(void)
+esp_err_t brn_tool_register(const brn_tool_t *tool)
 {
+    if (!tool || !tool->name || !tool->description || !tool->input_schema_json || !tool->execute) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    for (int i = 0; i < s_tool_count; ++i) {
+        if (strcmp(s_tools[i].name, tool->name) == 0) {
+            ESP_LOGW(TAG, "Duplicate tool ignored: %s", tool->name);
+            return ESP_ERR_INVALID_STATE;
+        }
+    }
+
+    if (s_tool_count >= MAX_TOOLS) {
+        ESP_LOGE(TAG, "Tool registry full");
+        return ESP_ERR_NO_MEM;
+    }
+
+    s_tools[s_tool_count++] = *tool;
+    invalidate_tools_json();
+    ESP_LOGI(TAG, "Registered tool: %s", tool->name);
+    return ESP_OK;
+}
+
+esp_err_t brn_tool_unregister(const char *name)
+{
+    if (!name || !name[0]) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    for (int i = 0; i < s_tool_count; ++i) {
+        if (strcmp(s_tools[i].name, name) == 0) {
+            for (int j = i; j < s_tool_count - 1; ++j) {
+                s_tools[j] = s_tools[j + 1];
+            }
+            --s_tool_count;
+            invalidate_tools_json();
+            ESP_LOGI(TAG, "Unregistered tool: %s", name);
+            return ESP_OK;
+        }
+    }
+
+    return ESP_ERR_NOT_FOUND;
+}
+
+const char *brn_tool_registry_get_tools_json(void)
+{
+    if (!s_tools_json) {
+        esp_err_t err = build_tools_json();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to build tools JSON: %s", esp_err_to_name(err));
+            return NULL;
+        }
+    }
+
     return s_tools_json;
 }
 
-esp_err_t tool_registry_execute(const char *name, const char *input_json,
-                                char *output, size_t output_size)
+size_t brn_tool_registry_append_prompt(char *buf, size_t size, size_t offset)
 {
+    if (s_tool_count == 0) {
+        return appendf(buf, size, offset, "- No tools are currently registered.\n");
+    }
+
+    for (int i = 0; i < s_tool_count; ++i) {
+        offset = appendf(buf, size, offset, "- %s: %s\n",
+                         s_tools[i].name, s_tools[i].description);
+    }
+
+    return offset;
+}
+
+esp_err_t brn_tool_execute(const char *name, const char *input_json,
+                           char *output, size_t output_size)
+{
+    if (!name || !output || output_size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     for (int i = 0; i < s_tool_count; i++) {
         if (strcmp(s_tools[i].name, name) == 0) {
             ESP_LOGI(TAG, "Executing tool: %s", name);
-            return s_tools[i].execute(input_json, output, output_size);
+            return s_tools[i].execute(input_json ? input_json : "{}", output, output_size);
         }
     }
 

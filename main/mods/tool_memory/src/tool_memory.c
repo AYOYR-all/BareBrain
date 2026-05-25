@@ -1,4 +1,4 @@
-#include "tools/tool_memory.h"
+#include "tool_memory.h"
 
 #include "brn_config.h"
 #include "memory/memory_index.h"

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "id": "tool-memory",
+  "name": "Memory Tools",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "Expose indexed memory search, read, link expansion, delete, note queueing, and indexing status.",
+  "targets": ["esp32s3"],
+  "sources": ["src/mod_tool_memory.c", "src/tool_memory.c"],
+  "headers": ["src/tool_memory.h"],
+  "dependencies": ["core.tool_registry", "agent.memory"],
+  "conflicts": [],
+  "permissions": ["storage.read", "storage.write"],
+  "tools": [
+    "memory_search",
+    "memory_read_node",
+    "memory_expand_links",
+    "memory_delete_node",
+    "memory_upsert_note",
+    "memory_reindex_status"
+  ],
+  "services": [],
+  "resources": {
+    "tasks": 0,
+    "gpio": [],
+    "uart": [],
+    "psram_bytes_hint": 8192,
+    "flash_bytes_hint": 8192
+  }
+}
