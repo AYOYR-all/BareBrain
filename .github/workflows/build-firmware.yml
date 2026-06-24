@@ -15,7 +15,7 @@ on:
       plugin_index_url:
         description: Raw plugins.json URL
         required: false
-        default: https://raw.githubusercontent.com/AYOYR-all/BareBrain_Plugins_Collection/main/plugins.json
+        default: https://github.com/AYOYR-all/BareBrain_Plugins_Collection/raw/refs/heads/main/plugins.json
         type: string
 
 permissions:
