@@ -19,6 +19,7 @@ jobs:
       - name: Build firmware (ESP32-S3)
         shell: bash
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           . "$IDF_PATH/export.sh"
           idf.py set-target esp32s3
           idf.py fullclean
