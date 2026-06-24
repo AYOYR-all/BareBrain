@@ -11,6 +11,10 @@ dependencies.lock
 components/
 managed_components/
 
+# Market Mods downloaded by cloud/local builds
+main/external_mods/*
+!main/external_mods/README.md
+
 # Generated headers
 main/assets/lang_config.h
 main/mmap_generate_emoji.h

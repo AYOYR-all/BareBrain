@@ -1,7 +1,7 @@
 #include "core/mod/brn_mod_manager.h"
 
 #include "core/mod/brn_mod.h"
-#include "mods/builtin_mods.h"
+#include "generated/mod_registry.h"
 
 #include <stdbool.h>
 
@@ -18,8 +18,8 @@ esp_err_t brn_mod_manager_init(void)
         return ESP_OK;
     }
 
-    const brn_mod_t *const *mods = brn_builtin_mods_get();
-    size_t count = brn_builtin_mods_count();
+    const brn_mod_t *const *mods = brn_mod_registry_get();
+    size_t count = brn_mod_registry_count();
 
     for (size_t i = 0; i < count; ++i) {
         const brn_mod_t *mod = mods[i];
@@ -38,7 +38,7 @@ esp_err_t brn_mod_manager_init(void)
     }
 
     s_initialized = true;
-    ESP_LOGI(TAG, "Initialized %u built-in mods", (unsigned int)count);
+    ESP_LOGI(TAG, "Initialized %u enabled mods", (unsigned int)count);
     return ESP_OK;
 }
 
@@ -51,8 +51,8 @@ esp_err_t brn_mod_manager_start(void)
         return ESP_OK;
     }
 
-    const brn_mod_t *const *mods = brn_builtin_mods_get();
-    size_t count = brn_builtin_mods_count();
+    const brn_mod_t *const *mods = brn_mod_registry_get();
+    size_t count = brn_mod_registry_count();
 
     for (size_t i = 0; i < count; ++i) {
         const brn_mod_t *mod = mods[i];
@@ -78,8 +78,8 @@ void brn_mod_manager_stop(void)
         return;
     }
 
-    const brn_mod_t *const *mods = brn_builtin_mods_get();
-    size_t count = brn_builtin_mods_count();
+    const brn_mod_t *const *mods = brn_mod_registry_get();
+    size_t count = brn_mod_registry_count();
 
     for (size_t i = count; i > 0; --i) {
         const brn_mod_t *mod = mods[i - 1];
@@ -98,8 +98,8 @@ esp_err_t brn_mod_manager_contribute_prompt(char *buf, size_t size, size_t *offs
         return ESP_ERR_INVALID_ARG;
     }
 
-    const brn_mod_t *const *mods = brn_builtin_mods_get();
-    size_t count = brn_builtin_mods_count();
+    const brn_mod_t *const *mods = brn_mod_registry_get();
+    size_t count = brn_mod_registry_count();
 
     for (size_t i = 0; i < count; ++i) {
         const brn_mod_t *mod = mods[i];

@@ -38,7 +38,7 @@ You send a message from ClawApp over the local WebSocket gateway, or from Feishu
 # You need ESP-IDF v5.5+ installed first:
 # https://docs.espressif.com/projects/esp-idf/en/v5.5.2/esp32s3/get-started/
 
-git clone https://github.com/fraternity-z/BareBrain.git
+git clone https://github.com/AYOYR-all/BareBrain.git
 cd BareBrain
 
 idf.py set-target esp32s3

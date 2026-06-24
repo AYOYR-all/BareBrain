@@ -1,0 +1,119 @@
+name: Build Firmware Profile
+run-name: BareBrain firmware ${{ inputs.request_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: Unique Manager build request ID
+        required: true
+        type: string
+      profile_json:
+        description: Compact firmware Profile JSON
+        required: true
+        type: string
+      plugin_index_url:
+        description: Raw plugins.json URL
+        required: false
+        default: https://raw.githubusercontent.com/AYOYR-all/BareBrain_Plugins_Collection/main/plugins.json
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v5.5.2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate request ID
+        shell: bash
+        run: |
+          [[ "${{ inputs.request_id }}" =~ ^[A-Za-z0-9._-]{8,80}$ ]] || {
+            echo "Invalid request_id"
+            exit 1
+          }
+
+      - name: Write build Profile
+        shell: bash
+        env:
+          PROFILE_JSON: ${{ inputs.profile_json }}
+        run: |
+          mkdir -p build-input
+          printf '%s' "$PROFILE_JSON" > build-input/firmware_profile.json
+          python -m json.tool build-input/firmware_profile.json >/dev/null
+
+      - name: Download plugin index
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 \
+            "${{ inputs.plugin_index_url }}" \
+            --output build-input/plugins.json
+          python -m json.tool build-input/plugins.json >/dev/null
+
+      - name: Prepare enabled market plugins
+        shell: bash
+        run: |
+          python scripts/prepare_external_mods.py \
+            --profile build-input/firmware_profile.json \
+            --index build-input/plugins.json \
+            --output-dir main/external_mods \
+            --download-dir build-input/plugin-downloads
+
+      - name: Generate Profile configuration
+        shell: bash
+        run: |
+          python scripts/generate_profile_config.py \
+            --profile build-input/firmware_profile.json \
+            --output main/generated/brn_profile_config.h
+
+      - name: Build ESP32-S3 firmware
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          idf.py set-target esp32s3
+          idf.py -DBRN_BUILD_PROFILE="$GITHUB_WORKSPACE/build-input/firmware_profile.json" reconfigure
+          idf.py build
+
+      - name: Package flash bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="firmware-artifact"
+          mkdir -p "$OUT"
+          cp build/bootloader/bootloader.bin "$OUT/bootloader.bin"
+          cp build/partition_table/partition-table.bin "$OUT/partition-table.bin"
+          cp build/barebrain.bin "$OUT/ota_0.bin"
+          cp build/spiffs.bin "$OUT/spiffs.bin"
+          cp build-input/firmware_profile.json "$OUT/firmware_profile.json"
+          cat > "$OUT/build_artifacts.json" <<'JSON'
+          {
+            "schema": 1,
+            "chip": "esp32s3",
+            "before": "default_reset",
+            "after": "hard_reset",
+            "compress": true,
+            "flash_files": [
+              {"file": "bootloader.bin", "offset": "0x0"},
+              {"file": "partition-table.bin", "offset": "0x8000"},
+              {"file": "ota_0.bin", "offset": "0x20000"},
+              {"file": "spiffs.bin", "offset": "0x420000"}
+            ]
+          }
+          JSON
+          (
+            cd "$OUT"
+            sha256sum bootloader.bin partition-table.bin ota_0.bin spiffs.bin firmware_profile.json \
+              > checksums.sha256
+          )
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: barebrain-firmware-${{ inputs.request_id }}
+          path: firmware-artifact/
+          if-no-files-found: error
+          retention-days: 7
