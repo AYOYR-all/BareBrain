@@ -1,5 +1,7 @@
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
+get_filename_component(BRN_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+
 set(BRN_EXTERNAL_MODS_DIR "${CMAKE_CURRENT_LIST_DIR}/external_mods" CACHE PATH
     "Directory containing downloaded BareBrain market Mods")
 set(BRN_BUILD_PROFILE "" CACHE FILEPATH
@@ -28,7 +30,7 @@ endif()
 
 execute_process(
     COMMAND "${Python3_EXECUTABLE}"
-        "${CMAKE_SOURCE_DIR}/scripts/generate_mod_registry.py"
+        "${BRN_PROJECT_ROOT}/scripts/generate_mod_registry.py"
         ${BRN_MOD_GENERATOR_ARGS}
     RESULT_VARIABLE BRN_MOD_GENERATOR_RESULT
     OUTPUT_VARIABLE BRN_MOD_GENERATOR_OUTPUT
