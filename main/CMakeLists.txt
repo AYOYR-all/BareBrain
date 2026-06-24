@@ -46,6 +46,21 @@ message(STATUS "${BRN_MOD_GENERATOR_OUTPUT}")
 
 include("${BRN_GENERATED_CMAKE}")
 
+if(BRN_BUILD_PROFILE)
+    execute_process(
+        COMMAND "${Python3_EXECUTABLE}"
+            "${BRN_PROJECT_ROOT}/scripts/generate_profile_config.py"
+            --profile "${BRN_BUILD_PROFILE}"
+            --output "${BRN_GENERATED_DIR}/brn_profile_config.h"
+        RESULT_VARIABLE BRN_PROFILE_GENERATOR_RESULT
+        ERROR_VARIABLE BRN_PROFILE_GENERATOR_ERROR
+    )
+    if(NOT BRN_PROFILE_GENERATOR_RESULT EQUAL 0)
+        message(FATAL_ERROR
+            "BareBrain Profile configuration generation failed:\n${BRN_PROFILE_GENERATOR_ERROR}")
+    endif()
+endif()
+
 idf_component_register(
     SRCS
         "brn.c"

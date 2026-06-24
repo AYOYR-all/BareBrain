@@ -63,13 +63,6 @@ jobs:
             --output-dir main/external_mods \
             --download-dir build-input/plugin-downloads
 
-      - name: Generate Profile configuration
-        shell: bash
-        run: |
-          python scripts/generate_profile_config.py \
-            --profile build-input/firmware_profile.json \
-            --output main/generated/brn_profile_config.h
-
       - name: Build ESP32-S3 firmware
         shell: bash
         run: |
