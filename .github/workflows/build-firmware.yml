@@ -63,14 +63,26 @@ jobs:
             --output-dir main/external_mods \
             --download-dir build-input/plugin-downloads
 
+      - name: Restore compiler cache
+        uses: actions/cache@v4
+        with:
+          path: /root/.cache/ccache
+          key: barebrain-ccache-idf-5.5.2-${{ github.sha }}
+          restore-keys: |
+            barebrain-ccache-idf-5.5.2-
+
       - name: Build ESP32-S3 firmware
         shell: bash
+        env:
+          IDF_CCACHE_ENABLE: "1"
+          CCACHE_DIR: /root/.cache/ccache
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           . "$IDF_PATH/export.sh"
           idf.py set-target esp32s3
           idf.py -DBRN_BUILD_PROFILE="$GITHUB_WORKSPACE/build-input/firmware_profile.json" reconfigure
           idf.py build
+          ccache --show-stats || true
 
       - name: Package flash bundle
         shell: bash
