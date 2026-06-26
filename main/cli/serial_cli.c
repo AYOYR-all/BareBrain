@@ -31,6 +31,18 @@
 
 static const char *TAG = "cli";
 
+esp_err_t __attribute__((weak)) tool_web_search_set_key(const char *api_key)
+{
+    (void)api_key;
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+esp_err_t __attribute__((weak)) tool_web_search_set_tavily_key(const char *api_key)
+{
+    (void)api_key;
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
 /* --- wifi_set command --- */
 static struct {
     struct arg_str *ssid;
@@ -365,7 +377,15 @@ static int cmd_set_search_key(int argc, char **argv)
         arg_print_errors(stderr, search_key_args.end, argv[0]);
         return 1;
     }
-    tool_web_search_set_key(search_key_args.key->sval[0]);
+    esp_err_t err = tool_web_search_set_key(search_key_args.key->sval[0]);
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        printf("Web search plugin is not enabled in this firmware.\n");
+        return 1;
+    }
+    if (err != ESP_OK) {
+        printf("Failed to save Search API key: %s\n", esp_err_to_name(err));
+        return 1;
+    }
     printf("Search API key saved.\n");
     return 0;
 }
@@ -383,7 +403,15 @@ static int cmd_set_tavily_key(int argc, char **argv)
         arg_print_errors(stderr, tavily_key_args.end, argv[0]);
         return 1;
     }
-    tool_web_search_set_tavily_key(tavily_key_args.key->sval[0]);
+    esp_err_t err = tool_web_search_set_tavily_key(tavily_key_args.key->sval[0]);
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        printf("Web search plugin is not enabled in this firmware.\n");
+        return 1;
+    }
+    if (err != ESP_OK) {
+        printf("Failed to save Tavily API key: %s\n", esp_err_to_name(err));
+        return 1;
+    }
     printf("Tavily API key saved.\n");
     return 0;
 }
