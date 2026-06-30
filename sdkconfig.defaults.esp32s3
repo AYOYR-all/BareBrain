@@ -1,6 +1,10 @@
 # BareBrain - ESP32-S3 Target Configuration
 CONFIG_IDF_TARGET="esp32s3"
 
+# Support ESP32-S3 chips up to revision v1.99. Some current boards report v1.2.
+CONFIG_ESP32S3_REV_MAX_FULL=199
+CONFIG_ESP_REV_MAX_FULL=199
+
 # Flash 16MB + QIO
 CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
 CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
