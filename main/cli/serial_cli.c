@@ -1159,7 +1159,7 @@ static esp_err_t create_console_repl(esp_console_repl_t **out_repl)
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     repl_config.prompt = "brn> ";
-    repl_config.max_cmdline_length = 256;
+    repl_config.max_cmdline_length = 1024;
 
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
     esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
