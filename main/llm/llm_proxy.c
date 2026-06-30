@@ -20,6 +20,7 @@ static const char *TAG = "llm";
 #define LLM_BASE_URL_MAX_LEN 192
 #define LLM_DUMP_MAX_BYTES   (16 * 1024)
 #define LLM_DUMP_CHUNK_BYTES 320
+#define BRN_HTTP_USER_AGENT  "BareBrain/1.0"
 
 static char s_api_key[LLM_API_KEY_MAX_LEN] = {0};
 static char s_model[LLM_MODEL_MAX_LEN] = BRN_LLM_DEFAULT_MODEL;
@@ -289,6 +290,8 @@ static esp_err_t llm_http_direct(const char *post_data, resp_buf_t *rb, int *out
 
     esp_http_client_set_method(client, HTTP_METHOD_POST);
     esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_set_header(client, "Accept", "application/json");
+    esp_http_client_set_header(client, "User-Agent", BRN_HTTP_USER_AGENT);
     if (provider_is_openai()) {
         if (s_api_key[0]) {
             char auth[LLM_API_KEY_MAX_LEN + 16];
@@ -329,6 +332,8 @@ static esp_err_t llm_http_via_proxy(const char *post_data, resp_buf_t *rb, int *
         hlen = snprintf(header, sizeof(header),
             "POST %s HTTP/1.1\r\n"
             "Host: %s\r\n"
+            "User-Agent: " BRN_HTTP_USER_AGENT "\r\n"
+            "Accept: application/json\r\n"
             "Content-Type: application/json\r\n"
             "Authorization: Bearer %s\r\n"
             "Content-Length: %d\r\n"
@@ -338,6 +343,8 @@ static esp_err_t llm_http_via_proxy(const char *post_data, resp_buf_t *rb, int *
         hlen = snprintf(header, sizeof(header),
             "POST %s HTTP/1.1\r\n"
             "Host: %s\r\n"
+            "User-Agent: " BRN_HTTP_USER_AGENT "\r\n"
+            "Accept: application/json\r\n"
             "Content-Type: application/json\r\n"
             "x-api-key: %s\r\n"
             "anthropic-version: %s\r\n"

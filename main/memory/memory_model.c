@@ -17,6 +17,8 @@
 
 static const char *TAG = "memory_model";
 
+#define BRN_HTTP_USER_AGENT "BareBrain/1.0"
+
 static char s_api_key[320] = {0};
 static char s_model[64] = {0};
 static char s_provider[16] = {0};
@@ -145,6 +147,8 @@ static esp_err_t call_direct(const llm_endpoint_t *endpoint,
     if (!client) return ESP_FAIL;
     esp_http_client_set_method(client, HTTP_METHOD_POST);
     esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_set_header(client, "Accept", "application/json");
+    esp_http_client_set_header(client, "User-Agent", BRN_HTTP_USER_AGENT);
     if (strcmp(provider, "openai") == 0) {
         char auth[336];
         snprintf(auth, sizeof(auth), "Bearer %s", api_key);
@@ -173,10 +177,10 @@ static esp_err_t call_proxy(const llm_endpoint_t *endpoint,
     int body_len = (int)strlen(body);
     int header_len = strcmp(provider, "openai") == 0
         ? snprintf(header, sizeof(header),
-                   "POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/json\r\nAuthorization: Bearer %s\r\nContent-Length: %d\r\nConnection: close\r\n\r\n",
+                   "POST %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: " BRN_HTTP_USER_AGENT "\r\nAccept: application/json\r\nContent-Type: application/json\r\nAuthorization: Bearer %s\r\nContent-Length: %d\r\nConnection: close\r\n\r\n",
                    endpoint->path, host, api_key, body_len)
         : snprintf(header, sizeof(header),
-                   "POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/json\r\nx-api-key: %s\r\nanthropic-version: %s\r\nContent-Length: %d\r\nConnection: close\r\n\r\n",
+                   "POST %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: " BRN_HTTP_USER_AGENT "\r\nAccept: application/json\r\nContent-Type: application/json\r\nx-api-key: %s\r\nanthropic-version: %s\r\nContent-Length: %d\r\nConnection: close\r\n\r\n",
                    endpoint->path, host, api_key, BRN_LLM_API_VERSION, body_len);
     proxy_conn_t *conn = proxy_conn_open(endpoint->host, endpoint->port, 30000);
     if (!conn) return ESP_ERR_HTTP_CONNECT;
