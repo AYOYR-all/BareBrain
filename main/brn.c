@@ -142,7 +142,7 @@ void app_main(void)
         ESP_LOGI(TAG, "Waiting for WiFi connection...");
         if (wifi_manager_wait_connected(30000) == ESP_OK) {
             wifi_ok = true;
-            brn_face_set("happy", 3000);
+            brn_face_set("happy", 8000);
             ESP_LOGI(TAG, "WiFi connected: %s", wifi_manager_get_ip());
         } else {
             brn_face_set("error", 0);
@@ -182,7 +182,6 @@ void app_main(void)
         cron_service_start();
         heartbeat_start();
         ESP_ERROR_CHECK(ws_server_start());
-        brn_face_set("idle", 0);
 
         log_main_stack_watermark("network service start");
         ESP_LOGI(TAG, "All services started!");
