@@ -41,12 +41,20 @@ def safe_extract(archive_path: Path, destination: Path) -> None:
         archive.extractall(destination)
 
 
+def copy_local_plugin(source: Path, destination: Path) -> None:
+    if destination.exists():
+        shutil.rmtree(destination)
+    ignore = shutil.ignore_patterns(".git", "build", "dist", "__pycache__", "*.pyc")
+    shutil.copytree(source, destination, ignore=ignore)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Download enabled BareBrain market Mods")
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--index", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--download-dir", type=Path, required=True)
+    parser.add_argument("--local-plugin-dir", type=Path, action="append", default=[])
     args = parser.parse_args()
 
     profile = load_json(args.profile)
@@ -62,6 +70,15 @@ def main() -> int:
         for item in index.get("plugins", [])
         if isinstance(item, dict) and isinstance(item.get("id"), str)
     }
+    local_plugins: dict[str, Path] = {}
+    for local_dir in args.local_plugin_dir:
+        manifest_path = local_dir / "barebrain.mod.json"
+        if not manifest_path.exists():
+            continue
+        manifest = load_json(manifest_path)
+        plugin_id = manifest.get("id")
+        if isinstance(plugin_id, str):
+            local_plugins[plugin_id] = local_dir.resolve()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     args.download_dir.mkdir(parents=True, exist_ok=True)
@@ -85,6 +102,16 @@ def main() -> int:
         checksum = lock.get("checksum") or plugin.get("checksum")
         if not isinstance(archive_url, str) or not isinstance(checksum, str):
             raise ValueError(f"{plugin_id}: archive and checksum are required")
+
+        local_plugin = local_plugins.get(plugin_id)
+        if local_plugin:
+            destination = args.output_dir / plugin_id
+            copy_local_plugin(local_plugin, destination)
+            manifest = load_json(destination / "barebrain.mod.json")
+            if manifest.get("id") != plugin_id:
+                raise ValueError(f"{plugin_id}: local plugin manifest does not match plugin index")
+            print(f"Prepared {plugin_id} {manifest.get('version', 'local')} from local directory")
+            continue
 
         archive_path = args.download_dir / f"{plugin_id}.zip"
         download(archive_url, archive_path)
