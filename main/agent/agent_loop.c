@@ -3,6 +3,7 @@
 #include "brn_config.h"
 #include "bus/message_bus.h"
 #include "llm/llm_proxy.h"
+#include "feedback/face_state.h"
 #include "memory/session_mgr.h"
 #include "tools/tool_registry.h"
 
@@ -203,6 +204,7 @@ static void agent_loop_task(void *arg)
         if (err != ESP_OK) continue;
 
         ESP_LOGI(TAG, "Processing message from %s:%s", msg.channel, msg.chat_id);
+        brn_face_set("thinking", 0);
 
         /* 1. Build system prompt */
         context_build_system_prompt(system_prompt, BRN_CONTEXT_BUF_SIZE);
@@ -250,6 +252,7 @@ static void agent_loop_task(void *arg)
             err = llm_chat_tools(system_prompt, messages, tools_json, &resp);
 
             if (err != ESP_OK) {
+                brn_face_set("error", 5000);
                 ESP_LOGE(TAG, "LLM call failed: %s", esp_err_to_name(err));
                 break;
             }
@@ -286,6 +289,7 @@ static void agent_loop_task(void *arg)
 
         /* 5. Send response */
         if (final_text && final_text[0]) {
+            brn_face_set("happy", 3500);
             /* Save to session (only user text + final assistant text) */
             esp_err_t save_user = session_append(msg.chat_id, "user", msg.content);
             esp_err_t save_asst = session_append(msg.chat_id, "assistant", final_text);
@@ -312,6 +316,7 @@ static void agent_loop_task(void *arg)
                 final_text = NULL;
             }
         } else {
+            brn_face_set("error", 5000);
             /* Error or empty response */
             free(final_text);
             brn_msg_t out = {0};

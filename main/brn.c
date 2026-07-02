@@ -26,6 +26,7 @@
 #include "tools/tool_registry.h"
 #include "cron/cron_service.h"
 #include "heartbeat/heartbeat.h"
+#include "feedback/face_state.h"
 #include "skills/skill_loader.h"
 #include "onboard/wifi_onboard.h"
 #include "storage/storage_manager.h"
@@ -132,6 +133,7 @@ void app_main(void)
     log_main_stack_watermark("serial_cli_init");
 
     /* Start WiFi */
+    brn_face_set("thinking", 0);
     esp_err_t wifi_err = wifi_manager_start();
     bool wifi_ok = false;
     if (wifi_err == ESP_OK) {
@@ -140,11 +142,14 @@ void app_main(void)
         ESP_LOGI(TAG, "Waiting for WiFi connection...");
         if (wifi_manager_wait_connected(30000) == ESP_OK) {
             wifi_ok = true;
+            brn_face_set("happy", 3000);
             ESP_LOGI(TAG, "WiFi connected: %s", wifi_manager_get_ip());
         } else {
+            brn_face_set("error", 0);
             ESP_LOGW(TAG, "WiFi connection timeout");
         }
     } else {
+        brn_face_set("error", 0);
         ESP_LOGW(TAG, "No WiFi credentials configured");
     }
     log_main_stack_watermark("wifi startup");
@@ -177,6 +182,7 @@ void app_main(void)
         cron_service_start();
         heartbeat_start();
         ESP_ERROR_CHECK(ws_server_start());
+        brn_face_set("idle", 0);
 
         log_main_stack_watermark("network service start");
         ESP_LOGI(TAG, "All services started!");

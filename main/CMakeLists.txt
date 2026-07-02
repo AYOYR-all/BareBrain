@@ -84,6 +84,7 @@ idf_component_register(
         "proxy/http_proxy.c"
         "cron/cron_service.c"
         "heartbeat/heartbeat.c"
+        "feedback/face_state.c"
         "core/mod/brn_mod_manager.c"
         "tools/tool_registry.c"
         "${BRN_GENERATED_REGISTRY_C}"
