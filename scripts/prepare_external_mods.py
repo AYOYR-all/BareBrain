@@ -90,6 +90,15 @@ def main() -> int:
         plugin = plugins.get(plugin_id)
         if plugin is None:
             raise ValueError(f"enabled market plugin is missing from index: {plugin_id}")
+        local_plugin = local_plugins.get(plugin_id)
+        if local_plugin:
+            destination = args.output_dir / plugin_id
+            copy_local_plugin(local_plugin, destination)
+            manifest = load_json(destination / "barebrain.mod.json")
+            if manifest.get("id") != plugin_id:
+                raise ValueError(f"{plugin_id}: local plugin manifest does not match plugin index")
+            print(f"Prepared {plugin_id} {manifest.get('version', 'local')} from local directory")
+            continue
         if plugin.get("version") != lock.get("version"):
             raise ValueError(
                 f"{plugin_id}: profile locks {lock.get('version')} but index contains {plugin.get('version')}"
@@ -102,16 +111,6 @@ def main() -> int:
         checksum = lock.get("checksum") or plugin.get("checksum")
         if not isinstance(archive_url, str) or not isinstance(checksum, str):
             raise ValueError(f"{plugin_id}: archive and checksum are required")
-
-        local_plugin = local_plugins.get(plugin_id)
-        if local_plugin:
-            destination = args.output_dir / plugin_id
-            copy_local_plugin(local_plugin, destination)
-            manifest = load_json(destination / "barebrain.mod.json")
-            if manifest.get("id") != plugin_id:
-                raise ValueError(f"{plugin_id}: local plugin manifest does not match plugin index")
-            print(f"Prepared {plugin_id} {manifest.get('version', 'local')} from local directory")
-            continue
 
         archive_path = args.download_dir / f"{plugin_id}.zip"
         download(archive_url, archive_path)
