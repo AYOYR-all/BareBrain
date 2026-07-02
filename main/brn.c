@@ -140,9 +140,9 @@ void app_main(void)
         ESP_LOGI(TAG, "Scanning nearby APs on boot...");
         wifi_manager_scan_and_print();
         ESP_LOGI(TAG, "Waiting for WiFi connection...");
-        if (wifi_manager_wait_connected(30000) == ESP_OK) {
+        if (wifi_manager_wait_connected(12000) == ESP_OK) {
             wifi_ok = true;
-            brn_face_set("happy", 8000);
+            brn_face_set("happy", 4000);
             ESP_LOGI(TAG, "WiFi connected: %s", wifi_manager_get_ip());
         } else {
             brn_face_set("error", 0);
