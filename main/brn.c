@@ -133,14 +133,13 @@ void app_main(void)
     log_main_stack_watermark("serial_cli_init");
 
     /* Start WiFi */
-    brn_face_set("thinking", 0);
     esp_err_t wifi_err = wifi_manager_start();
     bool wifi_ok = false;
     if (wifi_err == ESP_OK) {
         ESP_LOGI(TAG, "Scanning nearby APs on boot...");
         wifi_manager_scan_and_print();
         ESP_LOGI(TAG, "Waiting for WiFi connection...");
-        if (wifi_manager_wait_connected(12000) == ESP_OK) {
+        if (wifi_manager_wait_connected(0) == ESP_OK) {
             wifi_ok = true;
             brn_face_set("happy", 4000);
             ESP_LOGI(TAG, "WiFi connected: %s", wifi_manager_get_ip());
